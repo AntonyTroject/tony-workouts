@@ -280,6 +280,7 @@ body[data-view=workout] .panel.ex.complete{--hf:color-mix(in srgb,var(--y) 9%,#1
 :root[data-accent=toxic]{--y:#a6ff00;--y-hi:#c8ff52;--y-lo:#86d900;--y-edge:#5f9e00;--yr:166,255,0;--amber:#6aa100}
 :root[data-accent=tiffany]{--y:#81d8d0;--y-hi:#aee8e2;--y-lo:#5cc4ba;--y-edge:#3a9b92;--yr:129,216,208;--amber:#3d9a92}
 :root[data-accent=red]{--y:#ff3b3b;--y-hi:#ff7070;--y-lo:#e02020;--y-edge:#a31515;--yr:255,59,59;--amber:#b02a2a}
+:root[data-accent=claude]{--y:#d97757;--y-hi:#e8957a;--y-lo:#c15f3c;--y-edge:#8f4128;--yr:217,119,87;--amber:#a85a3e}
 
 /* бургер-меню */
 .menubtn{appearance:none;border:0;background:none;color:var(--fg);width:44px;height:44px;display:grid;place-items:center;cursor:pointer;margin-right:-8px;flex:none}
@@ -312,7 +313,7 @@ body[data-view=workout] .panel.ex.complete{--hf:color-mix(in srgb,var(--y) 9%,#1
 const API_URL = 'https://script.google.com/macros/s/AKfycbzFWaW3Yj8LpI_5xi7eJ8tTQh69dm8HGfOTMuaqZPwyWGoeAYq84gQGcGdL89uN3P7_/exec';
 
 /* ---------- темы ---------- */
-const ACCENTS=[['yellow','Жёлтая','linear-gradient(135deg,#ffe04d,#ffd200)'],['bw','Ч/Б','linear-gradient(135deg,#fff 50%,#111 50%)'],['mint','Мятная','linear-gradient(135deg,#94f2cc,#3cc995)'],['blue','Синяя','linear-gradient(135deg,#74abff,#2a6fe0)'],['toxic','Ядовитая','linear-gradient(135deg,#c8ff52,#86d900)'],['red','Красная','linear-gradient(135deg,#ff7070,#e02020)'],['tiffany','Тиффани','linear-gradient(135deg,#aee8e2,#5cc4ba)']];
+const ACCENTS=[['yellow','Жёлтая','linear-gradient(135deg,#ffe04d,#ffd200)'],['bw','Ч/Б','linear-gradient(135deg,#fff 50%,#111 50%)'],['mint','Мятная','linear-gradient(135deg,#94f2cc,#3cc995)'],['blue','Синяя','linear-gradient(135deg,#74abff,#2a6fe0)'],['toxic','Ядовитая','linear-gradient(135deg,#c8ff52,#86d900)'],['red','Красная','linear-gradient(135deg,#ff7070,#e02020)'],['tiffany','Тиффани','linear-gradient(135deg,#aee8e2,#5cc4ba)'],['claude','Claude','linear-gradient(135deg,#e8957a,#c15f3c)']];
 let accent='yellow',menuOpen=false;try{accent=localStorage.getItem('vt_accent')||'yellow'}catch(e){}
 if(!ACCENTS.some(a=>a[0]===accent))accent='yellow';
 function applyAccent(a){accent=a;if(a==='yellow')document.documentElement.removeAttribute('data-accent');else document.documentElement.setAttribute('data-accent',a);try{localStorage.setItem('vt_accent',a)}catch(e){}}
@@ -554,11 +555,11 @@ function progress(c){const m={};byDate(c.sessions).reverse().forEach(s=>Object.e
   return Object.values(m).sort((a,b)=>b.last.localeCompare(a.last)||a.name.localeCompare(b.name))}
 function renderAdmin(){
   document.body.dataset.view='admin';dock.hidden=true;
-  if(!AD.clients){app.innerHTML=`${header()}<div class="intro"><h1>Клиенты</h1><p>${AD.err||'Загружаю…'}</p></div>${AD.err&&AD.err!=='Неверная админ-ссылка.'?'<div class="btnrow"><button class="btn y" data-retry>Повторить</button></div>':''}`;return}
+  if(!AD.clients){app.innerHTML=`${header()}<div class="intro"><h1>Подопечные</h1><p>${AD.err||'Загружаю…'}</p></div>${AD.err&&AD.err!=='Неверная админ-ссылка.'?'<div class="btnrow"><button class="btn y" data-retry>Повторить</button></div>':''}`;return}
   const c=AD.sel&&AD.clients.find(x=>x.code===AD.sel);
   if(!c){AD.sel=null;
     const rows=AD.clients.map(c=>({c,ss:byDate(c.sessions)})).sort((a,b)=>(b.ss[0]?b.ss[0].date:'').localeCompare(a.ss[0]?a.ss[0].date:''));
-    app.innerHTML=`${header()}<div class="intro"><h1>Клиенты</h1>${AD.err?`<p class="small sync off">${AD.err} Показаны сохранённые данные.</p>`:''}</div>
+    app.innerHTML=`${header()}<div class="intro"><h1>Подопечные</h1>${AD.err?`<p class="small sync off">${AD.err} Показаны сохранённые данные.</p>`:''}</div>
       <div class="panel">${rows.map(({c,ss})=>{const l=ss[0],n4=ss.filter(s=>daysAgo(s.date)<28).length,warn=!l||daysAgo(l.date)>7;
         return `<button class="hitem${warn?' warn':''}" data-aclient="${esc(c.code)}"><span class="d">${esc(c.name.slice(0,1))}</span>
           <span><span class="t">${esc(c.name)}</span><small>${l?'Последняя: '+agoTxt(l.date)+' · за 4 недели: '+n4:'Ещё не занимался'}</small></span><span class="mute">→</span></button>`}).join('')}</div>`;
@@ -574,7 +575,7 @@ function renderAdmin(){
   const prog=pr.length?`<div class="prog">${pr.map(p=>{const pts=p.pts.slice(-8);
     return `<div><b class="exn">${esc(p.name)}</b><div class="pl">${p.pts.length>8?'… → ':''}${pts.map(x=>`${fmtDate(x.date,{day:'numeric',month:'short'})} <b>${esc(setTxt(x.b,p.unit))}</b>`).join(' → ')}</div></div>`}).join('')}</div>`:'<p class="empty">Тренировок пока нет.</p>';
   app.innerHTML=`${header()}
-    <div class="btnrow"><button class="btn" data-aback>← Клиенты</button></div>
+    <div class="btnrow"><button class="btn" data-aback>← Подопечные</button></div>
     <div class="intro"><h1>${esc(c.name)}</h1>${c.note?`<p>${esc(c.note)}</p>`:''}</div>
     <div class="panel alink"><code>${esc(c.link)}</code><button class="btn" data-acopy>Скопировать</button></div>
     <div class="section"><div class="atabs"><button class="btn${AD.tab==='log'?' y':''}" data-atab="log">Журнал</button><button class="btn${AD.tab==='prog'?' y':''}" data-atab="prog">Прогресс</button></div></div>
