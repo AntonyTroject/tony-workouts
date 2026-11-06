@@ -90,6 +90,16 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,label.btn:focus-
 .vrow .bar{grid-column:1/-1;height:6px;border-radius:6px;background:var(--card-2);overflow:hidden}
 .vrow .bar i{display:block;height:100%;border-radius:6px;background:var(--y)}
 
+/* admin */
+.hitem.warn small{color:var(--danger)}
+.alink{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.alink code{font-size:12px;color:var(--mute);overflow-wrap:anywhere}
+.atabs{display:flex;gap:8px}
+.prog{display:flex;flex-direction:column;gap:12px}
+.prog .pl{font-size:13px;color:var(--mute);line-height:1.6}
+.prog .pl b{color:var(--fg);font-weight:600}
+.hdetail i{font-style:normal;color:var(--mute)}
+
 /* history */
 .hitem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border:0;border-top:1px solid var(--line);background:none;color:var(--fg);text-align:left;font:inherit;width:100%;cursor:pointer}
 .hitem:first-child{border-top:0;padding-top:0}
@@ -312,8 +322,9 @@ const CLOSE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 
 /* ---------- клиент из ссылки ---------- */
 const params=new URLSearchParams(location.search);
-let CODE=(params.get('c')||'').trim();
-if(!CODE){try{CODE=localStorage.getItem('vt_code')||''}catch(e){}}
+const ADMIN=(params.get('admin')||'').trim(); // админ-панель: ?admin=КОД (проверяет сервер)
+let CODE=ADMIN?'':(params.get('c')||'').trim();
+if(!CODE&&!ADMIN){try{CODE=localStorage.getItem('vt_code')||''}catch(e){}}
 if(CODE){try{localStorage.setItem('vt_code',CODE)}catch(e){}}
 
 const KEY='vt_'+(CODE||'none');
@@ -374,6 +385,7 @@ function introText(){const n=DAYS.length;if(!n)return '';
 
 /* ---------- views ---------- */
 function render(){
+  if(ADMIN)return renderAdmin();
   document.body.dataset.view=view;
   if(!CODE)return renderNoCode();
   if(!DAYS.length)return renderLoading();
@@ -504,6 +516,7 @@ async function removeRemote(id){
   try{const r=await api({op:'del',id});if(r.ok){store.deleted=store.deleted.filter(x=>x!==id);save()}}catch(e){}
 }
 async function refresh(){
+  if(ADMIN)return adminLoad();
   if(!CODE)return;
   if(API_URL.startsWith('ВСТАВЬ')){sync='err';render();return}
   try{
@@ -520,9 +533,68 @@ async function refresh(){
   if(view==='home'||!DAYS.length)render();
 }
 
+/* ---------- админ-панель (только просмотр) ---------- */
+const AD={clients:null,err:'',sel:null,tab:'log',open:null};
+try{AD.clients=JSON.parse(localStorage.getItem('vt_admin_cache'))}catch(e){}
+async function adminLoad(){
+  try{const r=await(await fetch(API_URL+'?admin='+encodeURIComponent(ADMIN),{redirect:'follow'})).json();
+    if(!r.ok){AD.err=r.error==='forbidden'?'Неверная админ-ссылка.':'Ошибка сервера: '+r.error;if(r.error==='forbidden')AD.clients=null}
+    else{AD.err='';AD.clients=r.clients;try{localStorage.setItem('vt_admin_cache',JSON.stringify(r.clients))}catch(e){}}
+  }catch(e){AD.err='Нет связи.'}
+  render();
+}
+const byDate=ss=>[...ss].sort((a,b)=>b.date.localeCompare(a.date)||b.saved-a.saved);
+const agoTxt=iso=>{const n=daysAgo(iso);return n<=0?'сегодня':n===1?'вчера':n+' дн. назад'};
+const exSets=(e)=>e.sets.filter(x=>x&&(x.w||x.r)).map(x=>setTxt(x,e.unit)).join(', ')||'—';
+// лучший подход тренировки: больше вес, при равном — больше повторов
+function bestSet(e){let b=null;e.sets.forEach(x=>{if(!x||!(x.w||x.r))return;const w=+x.w||0,r=+x.r||0;
+  if(!b||w>b.wn||(w===b.wn&&r>b.rn))b={...x,wn:w,rn:r}});return b}
+function progress(c){const m={};byDate(c.sessions).reverse().forEach(s=>Object.entries(s.ex).forEach(([id,e])=>{const b=bestSet(e);if(!b)return;
+    const p=m[id]||(m[id]={name:e.name,unit:e.unit,last:'',pts:[]});p.name=e.name;p.last=s.date;p.pts.push({date:s.date,b})}));
+  return Object.values(m).sort((a,b)=>b.last.localeCompare(a.last)||a.name.localeCompare(b.name))}
+function renderAdmin(){
+  document.body.dataset.view='admin';dock.hidden=true;
+  if(!AD.clients){app.innerHTML=`${header()}<div class="intro"><h1>Клиенты</h1><p>${AD.err||'Загружаю…'}</p></div>${AD.err&&AD.err!=='Неверная админ-ссылка.'?'<div class="btnrow"><button class="btn y" data-retry>Повторить</button></div>':''}`;return}
+  const c=AD.sel&&AD.clients.find(x=>x.code===AD.sel);
+  if(!c){AD.sel=null;
+    const rows=AD.clients.map(c=>({c,ss:byDate(c.sessions)})).sort((a,b)=>(b.ss[0]?b.ss[0].date:'').localeCompare(a.ss[0]?a.ss[0].date:''));
+    app.innerHTML=`${header()}<div class="intro"><h1>Клиенты</h1>${AD.err?`<p class="small sync off">${AD.err} Показаны сохранённые данные.</p>`:''}</div>
+      <div class="panel">${rows.map(({c,ss})=>{const l=ss[0],n4=ss.filter(s=>daysAgo(s.date)<28).length,warn=!l||daysAgo(l.date)>7;
+        return `<button class="hitem${warn?' warn':''}" data-aclient="${esc(c.code)}"><span class="d">${esc(c.name.slice(0,1))}</span>
+          <span><span class="t">${esc(c.name)}</span><small>${l?'Последняя: '+agoTxt(l.date)+' · за 4 недели: '+n4:'Ещё не занимался'}</small></span><span class="mute">→</span></button>`}).join('')}</div>`;
+    return}
+  const ss=byDate(c.sessions);
+  const log=ss.length?ss.map(s=>{const n=Object.values(s.ex).reduce((a,e)=>a+e.sets.filter(x=>x&&x.done).length,0),open=AD.open===s.saved;
+    return `<button class="hitem" data-ahist="${s.saved}" aria-expanded="${open}"><span class="d">${esc(s.day)}</span>
+      <span><span class="t">${fmtDate(s.date,{weekday:'long',day:'numeric',month:'long'})}</span><small>${n} подходов${s.cardio?' · кардио':''}${s.note||Object.values(s.ex).some(e=>e.note)?' · есть заметки':''}</small></span>
+      <span class="mute">${open?'−':'+'}</span></button>
+      ${open?`<div class="hdetail">${Object.values(s.ex).map(e=>`<div><b>${esc(e.name)}</b> ${exSets(e)}${e.note?`<br><i>«${esc(e.note)}»</i>`:''}</div>`).join('')}
+        ${s.note?`<div>Заметка: «${esc(s.note)}»</div>`:''}</div>`:''}`}).join(''):'<p class="empty">Тренировок пока нет.</p>';
+  const pr=progress(c);
+  const prog=pr.length?`<div class="prog">${pr.map(p=>{const pts=p.pts.slice(-8);
+    return `<div><b class="exn">${esc(p.name)}</b><div class="pl">${p.pts.length>8?'… → ':''}${pts.map(x=>`${fmtDate(x.date,{day:'numeric',month:'short'})} <b>${esc(setTxt(x.b,p.unit))}</b>`).join(' → ')}</div></div>`}).join('')}</div>`:'<p class="empty">Тренировок пока нет.</p>';
+  app.innerHTML=`${header()}
+    <div class="btnrow"><button class="btn" data-aback>← Клиенты</button></div>
+    <div class="intro"><h1>${esc(c.name)}</h1>${c.note?`<p>${esc(c.note)}</p>`:''}</div>
+    <div class="panel alink"><code>${esc(c.link)}</code><button class="btn" data-acopy>Скопировать</button></div>
+    <div class="section"><div class="atabs"><button class="btn${AD.tab==='log'?' y':''}" data-atab="log">Журнал</button><button class="btn${AD.tab==='prog'?' y':''}" data-atab="prog">Прогресс</button></div></div>
+    <div class="section"><div class="panel">${AD.tab==='prog'?prog:log}</div></div>`;
+}
+function adminClick(d){
+  if(d.aclient){AD.sel=d.aclient;AD.tab='log';AD.open=null;render();scrollTo(0,0);return true}
+  if('aback' in d){AD.sel=null;render();scrollTo(0,0);return true}
+  if(d.atab){AD.tab=d.atab;keepScroll(render);return true}
+  if(d.ahist){AD.open=AD.open===+d.ahist?null:+d.ahist;keepScroll(render);return true}
+  if('acopy' in d){const c=AD.clients.find(x=>x.code===AD.sel);
+    navigator.clipboard.writeText(c.link).then(()=>toast('Ссылка скопирована'),()=>toast('Не получилось скопировать'));return true}
+  if('retry' in d){AD.err='';render();adminLoad();return true}
+  return false
+}
+
 /* ---------- events ---------- */
 document.addEventListener('click',ev=>{
   const t=ev.target.closest('button');if(!t)return;const d=t.dataset;
+  if(ADMIN&&adminClick(d))return;
   if(d.start)return startWorkout(d.start);
   if('resume' in d){view='workout';render();scrollTo(0,0);return}
   if('home' in d){view='home';render();scrollTo(0,0);return}
@@ -559,7 +631,7 @@ document.addEventListener('input',ev=>{const t=ev.target;
   else if(t.id==='wnote'){store.draft.note=t.value;save()}
 });
 addEventListener('online',refresh);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&view==='home')refresh()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&(ADMIN||view==='home'))refresh()});
 
 function finish(){
   const D=store.draft,ex={};
