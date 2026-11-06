@@ -197,10 +197,11 @@ textarea{width:100%;min-height:70px;background:var(--card-2);border:1px solid va
 .vrow .bar i{border-radius:0;background:repeating-linear-gradient(90deg,var(--y) 0 10px,transparent 10px 13px);filter:drop-shadow(0 0 4px rgba(var(--yr),.5))}
 .toast{border-radius:0}
 
-/* 10-segment volume */
-.vrow .seg{grid-column:1/-1;display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+/* volume segments: one per set, count = max group */
+.vrow .seg{grid-column:1/-1;display:grid;grid-template-columns:repeat(var(--cols,10),1fr);gap:clamp(2px,40px / var(--cols,10),4px)}
 .vrow .seg i{height:9px;background:var(--card-2);box-shadow:inset 0 0 0 1px rgba(var(--yr),.08)}
 .vrow .seg i.on{background:var(--y);box-shadow:0 0 6px rgba(var(--yr),.5)}
+.vrow .seg i.part{background:linear-gradient(90deg,var(--y) var(--p),var(--card-2) var(--p))}
 
 /* workout view: dim + slight blur over grid, quiet panels */
 .veil{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;background:rgba(10,10,9,.15);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);transition:opacity .25s}
@@ -356,8 +357,14 @@ function rpeAt(v,k){const l=scheme(v);return l.length>1?(l[k]||l[l.length-1]):(l
 const restTxt=v=>/^\d+([.,]\d+)?(\s*[-–]\s*\d+([.,]\d+)?)?$/.test(v)?v+' мин':v;
 function lastFor(id){const s=sorted().find(s=>s.ex[id]&&s.ex[id].sets.some(x=>x&&(x.w||x.r||x.done)));return s?{date:s.date,sets:s.ex[id].sets}:null}
 const setTxt=(x,unit)=>unit==='s'?(x.r?x.r+'с':''):`${x.w?x.w:''}${x.w&&x.r?'×':''}${x.r||''}${unit==='kgs'&&x.r?'с':''}`;
+const fmtN=n=>String(n).replace('.',',');
+// делений столько, сколько подходов у самой нагруженной мышцы; 1 деление = 1 подход, дробный закрашивается частично
+const segs=(n,cols)=>Array.from({length:cols},(_,k)=>k+1<=n+1e-9?'<i class="on"></i>':k<n?`<i class="part" style="--p:${Math.round((n-k)*100)}%"></i>`:'<i></i>').join('');
 const hasW=u=>u==='kg'||u==='kgs';
-function weeklyVolume(){const v={};DAYS.forEach(d=>PROGRAM[d].ex.forEach(e=>{const g=groupOf(e);v[g]=(v[g]||0)+e.sets}));
+// Объём: первая мышца получает подход целиком, остальные — по половине (одна группа в упражнении — один раз)
+function weeklyVolume(){const v={};DAYS.forEach(d=>PROGRAM[d].ex.forEach(e=>{const w={};
+    (e.muscles&&e.muscles.length?e.muscles:['Другое']).forEach((m,i)=>{const g=GROUP_ALIAS[m]||m;w[g]=Math.max(w[g]||0,i?.5:1)});
+    Object.entries(w).forEach(([g,k])=>{v[g]=(v[g]||0)+k*e.sets})}));
   const rank=g=>{const i=GROUP_ORDER.indexOf(g);return i<0?99:i};
   return Object.fromEntries(Object.entries(v).sort((a,b)=>rank(a[0])-rank(b[0])))}
 function introText(){const n=DAYS.length;if(!n)return '';
@@ -392,7 +399,7 @@ function renderLoading(){
 }
 
 function renderHome(){
-  const nd=nextDay(),vol=weeklyVolume();
+  const nd=nextDay(),vol=weeklyVolume(),volMax=Math.ceil(Math.max(1,...Object.values(vol)));
   const card=d=>{const p=PROGRAM[d];const ls=sorted().find(s=>s.day===d);
     return `<button class="day ${d===nd?'next':''}" data-start="${esc(d)}">
       <span class="tag ${d===nd?'':'off'}">Следующая</span>
@@ -418,7 +425,7 @@ function renderHome(){
       <span><span class="eyebrow">Не закончена</span><br><b>${esc(PROGRAM[store.draft.day].title)}</b> · ${fmtDate(store.draft.date)}</span><span class="progress">Продолжить →</span></button>`:''}
     <div class="days">${DAYS.map(card).join('')}</div>
     <div class="section"><h2>Подходов в неделю</h2><div class="panel vol">
-      ${Object.entries(vol).map(([g,n])=>`<div class="vrow"><span>${esc(g)}</span><span class="n">${n}</span><span class="seg" role="img" aria-label="${n} из 10">${Array.from({length:10},(_,k)=>`<i class="${k<n?'on':''}"></i>`).join('')}</span></div>`).join('')}
+      ${Object.entries(vol).map(([g,n])=>`<div class="vrow"><span>${esc(g)}</span><span class="n">${fmtN(n)}</span><span class="seg" style="--cols:${volMax}" role="img" aria-label="${fmtN(n)} подходов">${segs(n,volMax)}</span></div>`).join('')}
     </div></div>
     <div class="section"><h2>Журнал</h2>${sync==='ok'?'':`<p class="small sync off">${SYNC_TXT[sync]}</p>`}<div class="panel">${hist}</div></div>`;
   dock.hidden=true;
