@@ -257,6 +257,7 @@ body[data-view=workout] .panel.ex.complete{--hf:color-mix(in srgb,var(--y) 9%,#1
 :root[data-accent=mint]{--y:#5ee6b0;--y-hi:#94f2cc;--y-lo:#3cc995;--y-edge:#279670;--yr:94,230,176;--amber:#2f9c78}
 :root[data-accent=blue]{--y:#3d8bff;--y-hi:#74abff;--y-lo:#2a6fe0;--y-edge:#1d4fa8;--yr:61,139,255;--amber:#2a5bb8}
 :root[data-accent=toxic]{--y:#a6ff00;--y-hi:#c8ff52;--y-lo:#86d900;--y-edge:#5f9e00;--yr:166,255,0;--amber:#6aa100}
+:root[data-accent=red]{--y:#ff3b3b;--y-hi:#ff7070;--y-lo:#e02020;--y-edge:#a31515;--yr:255,59,59;--amber:#b02a2a}
 
 /* бургер-меню */
 .menubtn{appearance:none;border:0;background:none;color:var(--fg);width:44px;height:44px;display:grid;place-items:center;cursor:pointer;margin-right:-8px;flex:none}
@@ -289,7 +290,7 @@ body[data-view=workout] .panel.ex.complete{--hf:color-mix(in srgb,var(--y) 9%,#1
 const API_URL = 'https://script.google.com/macros/s/AKfycbzFWaW3Yj8LpI_5xi7eJ8tTQh69dm8HGfOTMuaqZPwyWGoeAYq84gQGcGdL89uN3P7_/exec';
 
 /* ---------- темы ---------- */
-const ACCENTS=[['yellow','Жёлтая','linear-gradient(135deg,#ffe04d,#ffd200)'],['bw','Ч/Б','linear-gradient(135deg,#fff 50%,#111 50%)'],['mint','Мятная','linear-gradient(135deg,#94f2cc,#3cc995)'],['blue','Синяя','linear-gradient(135deg,#74abff,#2a6fe0)'],['toxic','Ядовитая','linear-gradient(135deg,#c8ff52,#86d900)']];
+const ACCENTS=[['yellow','Жёлтая','linear-gradient(135deg,#ffe04d,#ffd200)'],['bw','Ч/Б','linear-gradient(135deg,#fff 50%,#111 50%)'],['mint','Мятная','linear-gradient(135deg,#94f2cc,#3cc995)'],['blue','Синяя','linear-gradient(135deg,#74abff,#2a6fe0)'],['toxic','Ядовитая','linear-gradient(135deg,#c8ff52,#86d900)'],['red','Красная','linear-gradient(135deg,#ff7070,#e02020)']];
 let accent='yellow',menuOpen=false;try{accent=localStorage.getItem('vt_accent')||'yellow'}catch(e){}
 if(!ACCENTS.some(a=>a[0]===accent))accent='yellow';
 function applyAccent(a){accent=a;if(a==='yellow')document.documentElement.removeAttribute('data-accent');else document.documentElement.setAttribute('data-accent',a);try{localStorage.setItem('vt_accent',a)}catch(e){}}
