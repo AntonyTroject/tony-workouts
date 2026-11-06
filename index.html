@@ -128,6 +128,16 @@ input[type=date]{background:var(--card);border:1px solid var(--line);color:var(-
 .field input::placeholder{color:#5c594f;font-weight:500}
 .field em{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:var(--mute);font-style:normal;pointer-events:none}
 .bw{font-size:12px;color:var(--mute);padding-left:4px}
+.extools{display:flex;gap:6px;flex:none}
+.nbtn{display:grid;place-items:center;padding:6px 8px}
+.nbtn svg{width:16px;height:16px;display:block}
+body .nbtn[aria-pressed=true]{--hf:rgba(var(--yr),.16)}
+.exnote{display:grid;gap:8px;margin-top:10px}
+.exnote .old{font-size:13px;color:var(--mute);background:var(--card-2);border-left:2px solid var(--line);padding:8px 10px;white-space:pre-wrap;user-select:text}
+.exnote .old span{display:block;font-size:11px;font-weight:600;margin-bottom:3px}
+.exnote textarea{min-height:60px}
+.setrow.has-rpe{grid-template-columns:24px minmax(0,1fr) minmax(0,1fr) auto 46px}
+.rpe{font-size:11px;font-weight:700;color:var(--mute);white-space:nowrap;font-variant-numeric:tabular-nums}
 .tick{appearance:none;width:46px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card-2);color:var(--mute);cursor:pointer;display:grid;place-items:center}
 .tick svg{width:18px;height:18px}
 .tick.on{background:var(--knurl),var(--y);color:#0a0a09;border-color:var(--y-edge)}
@@ -311,6 +321,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}}
 
 const $=s=>document.querySelector(s);
 const app=$('#app'),dock=$('#dock'),dockInner=$('#dockInner');
+let openNotes=new Set();
 let view='home',openHist=null,justSaved=null,confirmWipe=false,sync='wait';
 const SYNC_TXT={ok:'Журнал сохраняется в таблице тренера',wait:'Синхронизация…',err:'Нет связи. Тренировки сохранятся на телефоне и отправятся позже',bad:'Неверный код в ссылке. Попроси у тренера новую ссылку'};
 
@@ -318,6 +329,7 @@ const todayISO=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezone
 const fmtDate=(iso,o={day:'numeric',month:'long'})=>new Date(iso+'T12:00:00').toLocaleDateString('ru-RU',o);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const daysAgo=iso=>Math.round((new Date(todayISO()+'T12:00:00')-new Date(iso+'T12:00:00'))/864e5);
+const NOTE_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg>';
 const CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="square" stroke-linejoin="miter"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
 const DUMBBELL='<svg viewBox="0 0 24 24" fill="#0a0a09"><rect x="5" y="11.2" width="14" height="1.6" rx=".7"/><rect x="5.5" y="6.6" width="2.4" height="10.8" rx=".9"/><rect x="16.1" y="6.6" width="2.4" height="10.8" rx=".9"/><rect x="3" y="8.6" width="2" height="6.8" rx=".8"/><rect x="19" y="8.6" width="2" height="6.8" rx=".8"/></svg>';
 
@@ -334,7 +346,11 @@ const groupOf=e=>{const g=(e.muscles&&e.muscles[0])||'Другое';return GROUP
 const sorted=()=>[...store.sessions].sort((a,b)=>b.date.localeCompare(a.date)||b.saved-a.saved);
 const lastSession=()=>sorted()[0];
 function nextDay(){const l=lastSession();if(!l||!DAYS.length)return DAYS[0];const i=DAYS.indexOf(l.day);return DAYS[(i+1)%DAYS.length]}
-function lastFor(id){const s=sorted().find(s=>s.ex[id]);return s?{date:s.date,sets:s.ex[id].sets}:null}
+function lastNoteFor(id){const s=sorted().find(s=>s.ex[id]&&s.ex[id].note);return s?{date:s.date,note:s.ex[id].note}:null}
+// RPE: одно значение на все подходы («8-9») или своё на каждый («4, 5, 6»)
+function rpeAt(v,k){const l=String(v||'').split(/[,;]/).map(x=>x.trim()).filter(Boolean);return l.length>1?(l[k]||l[l.length-1]):(l[0]||'')}
+const restTxt=v=>/^\d+([.,]\d+)?(\s*[-–]\s*\d+([.,]\d+)?)?$/.test(v)?v+' мин':v;
+function lastFor(id){const s=sorted().find(s=>s.ex[id]&&s.ex[id].sets.some(x=>x&&(x.w||x.r||x.done)));return s?{date:s.date,sets:s.ex[id].sets}:null}
 const setTxt=(x,unit)=>unit==='s'?(x.r?x.r+'с':''):`${x.w?x.w:''}${x.w&&x.r?'×':''}${x.r||''}`;
 function weeklyVolume(){const v={};DAYS.forEach(d=>PROGRAM[d].ex.forEach(e=>{const g=groupOf(e);v[g]=(v[g]||0)+e.sets}));
   const rank=g=>{const i=GROUP_ORDER.indexOf(g);return i<0?99:i};
@@ -405,7 +421,7 @@ function savedPanel(){return `<div class="panel saved"><div><span class="eyebrow
 
 function startWorkout(d){
   if(!store.draft||store.draft.day!==d)store.draft={day:d,date:todayISO(),ex:{},variants:{},cardio:false,note:''};
-  justSaved=null;save();view='workout';render();scrollTo(0,0);
+  openNotes.clear();justSaved=null;save();view='workout';render();scrollTo(0,0);
 }
 function draftEx(ex){
   const D=store.draft,e=variant(ex,D.variants[ex.id]);
@@ -416,7 +432,7 @@ function draftEx(ex){
 function renderWorkout(){
   const D=store.draft,P=PROGRAM[D.day];let total=0,done=0;
   const blocks=P.ex.map((ex,i)=>{
-    const {e,rec}=draftEx(ex);const prev=lastFor(e.id);
+    const {e,rec}=draftEx(ex);const prev=lastFor(e.id);const nOpen=openNotes.has(e.id),pn=nOpen&&lastNoteFor(e.id);
     const rl=e.unit==='s'?'сек':(e.side?'на ст.':'повт');
     total+=ex.sets;done+=rec.sets.slice(0,ex.sets).filter(s=>s.done).length;
     const other=D.variants[ex.id]==='alt'?ex.name:ex.alt&&ex.alt.name;
@@ -424,13 +440,19 @@ function renderWorkout(){
     return `<section class="panel ex ${complete?'complete':''}">
       <div class="exhead"><div><p class="exn"><span class="idx">${i+1}</span>${esc(e.name)}</p>
         <div class="chips">${(e.muscles||[]).map(m=>`<span class="chip">${esc(m)}</span>`).join('')}</div></div>
-        ${ex.alt?`<button class="swap" data-swap="${esc(ex.id)}" aria-label="Заменить на: ${esc(other)}">⇄ Замена</button>`:''}</div>
+        <div class="extools">${ex.alt?`<button class="swap" data-swap="${esc(ex.id)}" aria-label="Заменить на: ${esc(other)}">⇄ Замена</button>`:''}
+        <button class="swap nbtn" data-note-toggle="${esc(e.id)}" aria-pressed="${nOpen}" aria-label="Заметка к упражнению">${NOTE_ICON}</button></div></div>
       ${e.note?`<p class="note">${esc(e.note)}</p>`:''}
+      ${e.rest?`<div class="chips"><span class="chip">отдых ${esc(restTxt(e.rest))}</span></div>`:''}
+      ${nOpen?`<div class="exnote">${pn?`<div class="old"><span>Прошлый раз, ${fmtDate(pn.date,{day:'numeric',month:'short'})}</span>${esc(pn.note)}</div>`:''}
+        <textarea id="n-${esc(e.id)}" data-exnote="${esc(e.id)}" placeholder="Техника, ощущения, что поменять">${esc(rec.note||'')}</textarea></div>`:''}
       ${prev?`<div class="prev">Прошлый раз, ${fmtDate(prev.date,{day:'numeric',month:'short'})}: <b>${prev.sets.filter(s=>s.w||s.r).map(s=>setTxt(s,e.unit)).join('  ')||'—'}</b></div>`:''}
       <div class="sets">${rec.sets.slice(0,ex.sets).map((s,k)=>{const ps=prev&&prev.sets[k];
-        return `<div class="setrow ${s.done?'done':''}"><span class="n">${k+1}</span>
+        const rp=rpeAt(e.rpe,k);
+        return `<div class="setrow ${s.done?'done':''} ${e.rpe?'has-rpe':''}"><span class="n">${k+1}</span>
           ${e.unit==='kg'?`<label class="field"><input inputmode="decimal" id="w-${esc(e.id)}-${k}" data-ex="${esc(e.id)}" data-k="${k}" data-f="w" value="${esc(s.w)}" placeholder="${ps&&ps.w?esc(ps.w):'вес'}" aria-label="Вес, подход ${k+1}"><em>кг</em></label>`:`<span class="bw">${e.unit==='s'?'время':'без веса'}</span>`}
           <label class="field"><input inputmode="numeric" id="r-${esc(e.id)}-${k}" data-ex="${esc(e.id)}" data-k="${k}" data-f="r" value="${esc(s.r)}" placeholder="${ps&&ps.r?esc(ps.r):esc(ex.reps)}" aria-label="Повторы, подход ${k+1}"><em>${rl}</em></label>
+          ${e.rpe?`<span class="rpe">${rp?'RPE '+esc(rp):''}</span>`:''}
           <button class="tick ${s.done?'on':''}" data-tick="${esc(e.id)}" data-k="${k}" aria-label="Подход ${k+1} сделан" aria-pressed="${s.done}">${CHECK}</button></div>`}).join('')}</div>
     </section>`}).join('');
   app.innerHTML=`
@@ -440,7 +462,7 @@ function renderWorkout(){
     ${blocks}
     ${P.cardio?`<section class="panel cardio"><div><p class="exn">${esc(P.cardio.name)}${P.cardio.min?', '+P.cardio.min+' мин':''}</p>${P.cardio.hr?`<p class="note">Пульс ${esc(P.cardio.hr)}</p>`:''}</div>
       <button class="tick ${D.cardio?'on':''}" data-cardio aria-label="Кардио сделано" aria-pressed="${D.cardio}">${CHECK}</button></section>`:''}
-    <section class="panel section"><label for="wnote" class="exn">Заметка</label><textarea id="wnote" placeholder="Самочувствие, колени, спина">${esc(D.note)}</textarea></section>
+    <section class="panel section"><label for="wnote" class="exn">Заметка к тренировке</label><textarea id="wnote" placeholder="Самочувствие, колени, спина">${esc(D.note)}</textarea></section>
     <div id="confirmBox"></div>`;
   dock.hidden=false;
   dockInner.innerHTML='<button class="ghost" data-cancel>Отменить</button><button class="cta" data-finish><span>Завершить</span></button>';
@@ -492,6 +514,8 @@ document.addEventListener('click',ev=>{
   if('retry' in d){sync='wait';render();refresh();return}
   if(d.hist){openHist=openHist===+d.hist?null:+d.hist;render();return}
   if(d.del){const id=+d.del;store.sessions=store.sessions.filter(s=>s.saved!==id);openHist=null;save();render();removeRemote(id);toast('Запись удалена');return}
+  if(d.noteToggle){const id=d.noteToggle,was=openNotes.has(id);was?openNotes.delete(id):openNotes.add(id);keepScroll(render);
+    if(!was){const n=document.getElementById('n-'+id);if(n)n.focus({preventScroll:true})}return}
   if(d.swap){const D=store.draft;D.variants[d.swap]=D.variants[d.swap]==='alt'?'main':'alt';save();keepScroll(render);return}
   if(d.tick){const s=store.draft.ex[d.tick].sets[+d.k];s.done=!s.done;
     if(s.done){const r=document.getElementById(`r-${d.tick}-${d.k}`),w=document.getElementById(`w-${d.tick}-${d.k}`);
@@ -516,6 +540,7 @@ document.addEventListener('submit',ev=>{
 document.addEventListener('input',ev=>{const t=ev.target;
   if(t.dataset.ex){store.draft.ex[t.dataset.ex].sets[+t.dataset.k][t.dataset.f]=t.value.replace(',','.');save()}
   else if(t.id==='wdate'){store.draft.date=t.value||todayISO();save()}
+  else if(t.dataset.exnote){store.draft.ex[t.dataset.exnote].note=t.value;save()}
   else if(t.id==='wnote'){store.draft.note=t.value;save()}
 });
 addEventListener('online',refresh);
@@ -524,7 +549,8 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 function finish(){
   const D=store.draft,ex={};
   PROGRAM[D.day].ex.forEach(x=>{const e=variant(x,D.variants[x.id]);const rec=D.ex[e.id];if(!rec)return;
-    const sets=rec.sets.slice(0,x.sets);if(sets.some(s=>s.done||s.w||s.r))ex[e.id]={name:e.name,unit:e.unit,sets}});
+    const sets=rec.sets.slice(0,x.sets),note=(rec.note||'').trim();
+    if(sets.some(s=>s.done||s.w||s.r)||note)ex[e.id]={name:e.name,unit:e.unit,sets,...(note?{note}:{})}});
   if(!Object.keys(ex).length){toast('Отметь хотя бы один подход');return}
   const s={day:D.day,date:D.date,saved:Date.now(),ex,cardio:D.cardio,note:D.note};
   store.sessions.push(s);store.draft=null;justSaved=s.saved;save();
