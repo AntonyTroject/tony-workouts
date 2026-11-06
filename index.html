@@ -336,7 +336,7 @@ const DUMBBELL='<svg viewBox="0 0 24 24" fill="#0a0a09"><rect x="5" y="11.2" wid
 /* ---------- программа (приходит из таблицы) ---------- */
 let PROGRAM={},DAYS=[],ALL_EX={};
 function setProgram(days){
-  PROGRAM=days||{};DAYS=Object.keys(PROGRAM).filter(d=>PROGRAM[d].ex&&PROGRAM[d].ex.length).sort();
+  PROGRAM=days||{};Object.values(PROGRAM).forEach(d=>(d.ex||[]).forEach(e=>{const l=scheme(e.reps);if(l.length>1)e.sets=l.length}));DAYS=Object.keys(PROGRAM).filter(d=>PROGRAM[d].ex&&PROGRAM[d].ex.length).sort();
   ALL_EX={};DAYS.forEach(d=>PROGRAM[d].ex.forEach(e=>{ALL_EX[e.id]=e;if(e.alt)ALL_EX[e.alt.id]={...e,...e.alt,muscles:e.alt.muscles||e.muscles}}));
 }
 const variant=(ex,v)=>v==='alt'&&ex.alt?{...ex,...ex.alt,muscles:ex.alt.muscles||ex.muscles}:ex;
@@ -348,10 +348,14 @@ const lastSession=()=>sorted()[0];
 function nextDay(){const l=lastSession();if(!l||!DAYS.length)return DAYS[0];const i=DAYS.indexOf(l.day);return DAYS[(i+1)%DAYS.length]}
 function lastNoteFor(id){const s=sorted().find(s=>s.ex[id]&&s.ex[id].note);return s?{date:s.date,note:s.ex[id].note}:null}
 // RPE: одно значение на все подходы («8-9») или своё на каждый («4, 5, 6»)
-function rpeAt(v,k){const l=String(v||'').split(/[,;]/).map(x=>x.trim()).filter(Boolean);return l.length>1?(l[k]||l[l.length-1]):(l[0]||'')}
+// «1*1, 3*6» → [1,6,6,6]; «4, 5, 6» → [4,5,6]; «8-12» → [8-12]
+function scheme(v){const out=[];String(v||'').split(/[,;]/).map(x=>x.trim()).filter(Boolean).forEach(p=>{
+  const m=p.match(/^(\d+)\s*[*×xх]\s*(.+)$/i);if(m)for(let i=0;i<+m[1];i++)out.push(m[2].trim());else out.push(p)});return out}
+function rpeAt(v,k){const l=scheme(v);return l.length>1?(l[k]||l[l.length-1]):(l[0]||'')}
 const restTxt=v=>/^\d+([.,]\d+)?(\s*[-–]\s*\d+([.,]\d+)?)?$/.test(v)?v+' мин':v;
 function lastFor(id){const s=sorted().find(s=>s.ex[id]&&s.ex[id].sets.some(x=>x&&(x.w||x.r||x.done)));return s?{date:s.date,sets:s.ex[id].sets}:null}
-const setTxt=(x,unit)=>unit==='s'?(x.r?x.r+'с':''):`${x.w?x.w:''}${x.w&&x.r?'×':''}${x.r||''}`;
+const setTxt=(x,unit)=>unit==='s'?(x.r?x.r+'с':''):`${x.w?x.w:''}${x.w&&x.r?'×':''}${x.r||''}${unit==='kgs'&&x.r?'с':''}`;
+const hasW=u=>u==='kg'||u==='kgs';
 function weeklyVolume(){const v={};DAYS.forEach(d=>PROGRAM[d].ex.forEach(e=>{const g=groupOf(e);v[g]=(v[g]||0)+e.sets}));
   const rank=g=>{const i=GROUP_ORDER.indexOf(g);return i<0?99:i};
   return Object.fromEntries(Object.entries(v).sort((a,b)=>rank(a[0])-rank(b[0])))}
@@ -398,7 +402,7 @@ function renderHome(){
     return `<button class="hitem" data-hist="${s.saved}" aria-expanded="${open}"><span class="d">${esc(s.day)}</span>
       <span><span class="t">${fmtDate(s.date,{weekday:'long',day:'numeric',month:'long'})}</span><small>${n} подходов${s.cardio?' · кардио':''}${s.pending?' · ждёт отправки':''}</small></span>
       <span class="mute">${open?'−':'+'}</span></button>
-      ${open?`<div class="hdetail">${Object.values(s.ex).map(e=>`<div><b>${esc(e.name)}</b> ${e.sets.filter(x=>x.w||x.r).map(x=>setTxt(x,e.unit)).join(', ')||'—'}</div>`).join('')}
+      ${open?`<div class="hdetail">${Object.entries(s.ex).map(([id,e])=>`<div><b>${esc(e.name)}</b> ${e.sets.filter(x=>x.w||x.r).map(x=>setTxt(x,(ALL_EX[id]||e).unit)).join(', ')||'—'}</div>`).join('')}
         ${s.note?`<div>«${esc(s.note)}»</div>`:''}<div><button class="btn small danger" data-del="${s.saved}">Удалить запись</button></div></div>`:''}`;
   }).join(''):'<p class="empty">После первой тренировки здесь появится журнал с весами.</p>';
 
@@ -433,7 +437,7 @@ function renderWorkout(){
   const D=store.draft,P=PROGRAM[D.day];let total=0,done=0;
   const blocks=P.ex.map((ex,i)=>{
     const {e,rec}=draftEx(ex);const prev=lastFor(e.id);const nOpen=openNotes.has(e.id),pn=nOpen&&lastNoteFor(e.id);
-    const rl=e.unit==='s'?'сек':(e.side?'на ст.':'повт');
+    const rl=e.unit==='s'||e.unit==='kgs'?'сек':(e.side?'на ст.':'повт');
     total+=ex.sets;done+=rec.sets.slice(0,ex.sets).filter(s=>s.done).length;
     const other=D.variants[ex.id]==='alt'?ex.name:ex.alt&&ex.alt.name;
     const complete=rec.sets.slice(0,ex.sets).every(s=>s.done);
@@ -450,8 +454,8 @@ function renderWorkout(){
       <div class="sets">${rec.sets.slice(0,ex.sets).map((s,k)=>{const ps=prev&&prev.sets[k];
         const rp=rpeAt(e.rpe,k);
         return `<div class="setrow ${s.done?'done':''} ${e.rpe?'has-rpe':''}"><span class="n">${k+1}</span>
-          ${e.unit==='kg'?`<label class="field"><input inputmode="decimal" id="w-${esc(e.id)}-${k}" data-ex="${esc(e.id)}" data-k="${k}" data-f="w" value="${esc(s.w)}" placeholder="${ps&&ps.w?esc(ps.w):'вес'}" aria-label="Вес, подход ${k+1}"><em>кг</em></label>`:`<span class="bw">${e.unit==='s'?'время':'без веса'}</span>`}
-          <label class="field"><input inputmode="numeric" id="r-${esc(e.id)}-${k}" data-ex="${esc(e.id)}" data-k="${k}" data-f="r" value="${esc(s.r)}" placeholder="${ps&&ps.r?esc(ps.r):esc(ex.reps)}" aria-label="Повторы, подход ${k+1}"><em>${rl}</em></label>
+          ${hasW(e.unit)?`<label class="field"><input inputmode="decimal" id="w-${esc(e.id)}-${k}" data-ex="${esc(e.id)}" data-k="${k}" data-f="w" value="${esc(s.w)}" placeholder="${ps&&ps.w?esc(ps.w):'вес'}" aria-label="Вес, подход ${k+1}"><em>кг</em></label>`:`<span class="bw">${e.unit==='s'?'время':'без веса'}</span>`}
+          <label class="field"><input inputmode="numeric" id="r-${esc(e.id)}-${k}" data-ex="${esc(e.id)}" data-k="${k}" data-f="r" value="${esc(s.r)}" placeholder="${ps&&ps.r?esc(ps.r):esc(rpeAt(ex.reps,k))}" aria-label="Повторы, подход ${k+1}"><em>${rl}</em></label>
           ${e.rpe?`<span class="rpe">${rp?'RPE '+esc(rp):''}</span>`:''}
           <button class="tick ${s.done?'on':''}" data-tick="${esc(e.id)}" data-k="${k}" aria-label="Подход ${k+1} сделан" aria-pressed="${s.done}">${CHECK}</button></div>`}).join('')}</div>
     </section>`}).join('');
