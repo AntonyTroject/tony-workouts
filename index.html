@@ -407,7 +407,7 @@ en:{
   editNote:'Edit note',notePhA:'Note about this client',noteSaved:'Note saved',save:'Save',stat4w:'Workouts, 4 wks',statAvg:'Per week',statStreak:'Weeks in a row',discard:'Discard unsaved changes?',
   up:'Move up',down:'Move down',remove:'Remove',edName:'Exercise',edSets:'Sets',edReps:'Reps',edUnit:'Type',edRest:'Rest, min',edRpe:'RPE',edSide:'Per side',edMuscles:'Muscles (comma-separated, main first)',edNote:'Comment',
   edAlt:'Alternative exercise',edAltName:'Alternative name',edDay:d=>`Day ${d}`,edTitle:'Title',edFocus:'Focus',edCardioName:'Cardio',edMin:'Minutes',edHr:'Heart rate',addEx:'+ Exercise',addDay:'+ Day',delDay:'Delete day',
-  edErr:'Every exercise needs a name and at least 1 set',clientLang:'Client language',langSaved:'Language saved',saveLang:'Save language',langHint:"Shared with the client's app: either side can change it",
+  edErr:'Every exercise needs a name and at least 1 set',demoBanner:'Demo mode: fictional clients and data',clientLang:'Client language',langSaved:'Language saved',saveLang:'Save language',langHint:"Shared with the client's app: either side can change it",
 },
 ru:{
   'col.yellow':'Жёлтая','col.bw':'Ч/Б','col.mint':'Мятная','col.blue':'Синяя','col.toxic':'Ядовитая','col.red':'Красная','col.tiffany':'Тиффани','col.claude':'Claude',
@@ -441,7 +441,7 @@ ru:{
   editNote:'Изменить заметку',notePhA:'Заметка о подопечном',noteSaved:'Заметка сохранена',save:'Сохранить',stat4w:'Тренировок за 4 нед.',statAvg:'В неделю',statStreak:'Недель подряд',discard:'Отменить несохранённые изменения?',
   up:'Выше',down:'Ниже',remove:'Удалить',edName:'Упражнение',edSets:'Подходы',edReps:'Повторы',edUnit:'Тип',edRest:'Отдых, мин',edRpe:'RPE',edSide:'На сторону',edMuscles:'Мышцы (через запятую, главная первой)',edNote:'Комментарий',
   edAlt:'Замена',edAltName:'Название замены',edDay:d=>`День ${d}`,edTitle:'Название',edFocus:'Фокус',edCardioName:'Кардио',edMin:'Минуты',edHr:'Пульс',addEx:'+ Упражнение',addDay:'+ День',delDay:'Удалить день',
-  edErr:'У каждого упражнения должны быть название и хотя бы 1 подход',clientLang:'Язык подопечного',langSaved:'Язык сохранён',saveLang:'Сохранить язык',langHint:'Общий с приложением подопечного: менять можно с обеих сторон',
+  edErr:'У каждого упражнения должны быть название и хотя бы 1 подход',demoBanner:'Демо-режим: вымышленные подопечные и данные',clientLang:'Язык подопечного',langSaved:'Язык сохранён',saveLang:'Сохранить язык',langHint:'Общий с приложением подопечного: менять можно с обеих сторон',
 }};
 const t=(k,...a)=>{const v=T[lang][k]??T.en[k]??k;return typeof v==='function'?v(...a):v};
 const MUSCLE_EN={'Ягодицы':'Glutes','Заднее бедро':'Hamstrings','Квадрицепс':'Quads','Спина':'Back','Грудь':'Chest','Пресс':'Abs','Бицепс':'Biceps','Трицепс':'Triceps','Плечи':'Shoulders','Низ спины':'Lower back','Верх спины':'Upper back','Задняя дельта':'Rear delts','Передняя дельта':'Front delts','Средняя дельта':'Side delts','Средняя ягодичная':'Glute med','Икры':'Calves','Предплечья':'Forearms','Трапеции':'Traps','Приводящие':'Adductors','Другое':'Other'};
@@ -739,7 +739,7 @@ async function refresh(){
 }
 
 /* ---------- админ-панель: журнал, прогресс, программа, подопечные, ответы ---------- */
-const AD={clients:null,err:'',forbid:false,sel:null,tab:'log',open:null,rep:null,edit:null,altOpen:new Set(),addOpen:false,noteEdit:false};
+const AD={role:'admin',clients:null,err:'',forbid:false,sel:null,tab:'log',open:null,rep:null,edit:null,altOpen:new Set(),addOpen:false,noteEdit:false};
 try{AD.clients=JSON.parse(localStorage.getItem('vt_admin_cache'))}catch(e){}
 async function adminPost(body){
   const r=await(await fetch(API_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({admin:ADMIN,...body})})).json();
@@ -747,7 +747,7 @@ async function adminPost(body){
 async function adminLoad(){
   try{const r=await(await fetch(API_URL+'?admin='+encodeURIComponent(ADMIN),{redirect:'follow'})).json();
     if(!r.ok){AD.forbid=r.error==='forbidden';AD.err=AD.forbid?t('badLink'):t('serverErr',r.error);if(AD.forbid)AD.clients=null}
-    else{AD.err='';AD.forbid=false;AD.clients=r.clients;try{localStorage.setItem('vt_admin_cache',JSON.stringify(r.clients))}catch(e){}}
+    else{AD.err='';AD.forbid=false;AD.role=r.role||'admin';AD.clients=r.clients;try{localStorage.setItem('vt_admin_cache',JSON.stringify(r.clients))}catch(e){}}
   }catch(e){AD.err=t('noConn')}
   if(!AD.rep&&!AD.edit)render(); // не перерисовываем, пока тренер пишет ответ или правит программу
 }
@@ -842,7 +842,7 @@ function renderAdmin(){
   const c=AD.sel&&AD.clients.find(x=>x.code===AD.sel);
   if(!c){AD.sel=null;AD.edit=null;
     const rows=AD.clients.map(c=>({c,ss:byDate(c.sessions)})).sort((a,b)=>(b.ss[0]?b.ss[0].date:'').localeCompare(a.ss[0]?a.ss[0].date:''));
-    app.innerHTML=`${header()}<div class="intro"><h1>${t('clients')}</h1>${AD.err?`<p class="small sync off">${AD.err} ${t('savedData')}</p>`:''}</div>
+    app.innerHTML=`${header()}<div class="intro"><h1>${t('clients')}</h1>${AD.role==='demo'?`<p class="small sync ok">${t('demoBanner')}</p>`:''}${AD.err?`<p class="small sync off">${AD.err} ${t('savedData')}</p>`:''}</div>
       <div class="panel">${rows.map(({c,ss})=>{const l=ss[0],n4=ss.filter(s=>daysAgo(s.date)<28).length,warn=!l||daysAgo(l.date)>7,pain=painOf(ss),pl=plateau(c);
         return `<button class="hitem${warn?' warn':''}" data-aclient="${esc(c.code)}"><span class="d">${esc(c.name.slice(0,1))}</span>
           <span><span class="t">${esc(c.name)}</span><small>${l?t('lastAct',agoTxt(l.date),n4):t('notYet')}</small>${actBars(activity(ss))}
@@ -865,7 +865,7 @@ function renderAdmin(){
   const body=AD.tab==='prog'?prog:AD.tab==='plan'?(AD.edit?editView():planView(c)):log;
   app.innerHTML=`${header()}
     <div class="btnrow"><button class="btn" data-aback>${t('backClients')}</button></div>
-    <div class="intro"><h1>${esc(c.name)}</h1>
+    <div class="intro"><h1>${esc(c.name)}</h1>${AD.role==='demo'?`<p class="small sync ok">${t('demoBanner')}</p>`:''}
       ${AD.noteEdit?`<div class="ed"><textarea id="cnote" placeholder="${t('notePhA')}">${esc(c.note||'')}</textarea><div class="btnrow"><button class="btn y" data-anotesave>${t('save')}</button><button class="btn" data-anotecancel>${t('cancel')}</button></div></div>`
         :`${c.note?`<p>${esc(c.note)}</p>`:''}<div><button class="btn small" data-anote>${t('editNote')}</button></div>`}</div>
     <div class="ed"><label>${t('clientLang')}<div class="btnrow"><select data-alang style="flex:1">${LANGS.map(([k,n])=>`<option value="${k}"${(c.lang||'en')===k?' selected':''}>${n}</option>`).join('')}</select><button class="btn y" data-alangsave disabled>${t('saveLang')}</button></div><small class="mute">${t('langHint')}</small></label></div>
