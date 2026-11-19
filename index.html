@@ -366,8 +366,8 @@ const CLOSE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 
 /* ---------- язык: по умолчанию English; ?lang=ru|en в ссылке запоминается ---------- */
 const LANGS=[['en','English'],['ru','Русский']];
-let lang='en';
-try{const q=new URLSearchParams(location.search).get('lang');if(LANGS.some(l=>l[0]===q)){lang=q;localStorage.setItem('vt_lang',q)}else lang=localStorage.getItem('vt_lang')||'en'}catch(e){}
+let lang='en',langChosen=false; // langChosen: язык выбран самим человеком (меню или ?lang=), тогда язык подопечного из таблицы не применяется
+try{const q=new URLSearchParams(location.search).get('lang');if(LANGS.some(l=>l[0]===q)){lang=q;langChosen=true;localStorage.setItem('vt_lang',q)}else{const v=localStorage.getItem('vt_lang');if(LANGS.some(l=>l[0]===v)){lang=v;langChosen=true}}}catch(e){}
 if(!LANGS.some(l=>l[0]===lang))lang='en';
 document.documentElement.lang=lang;
 const T={
@@ -403,7 +403,7 @@ en:{
   editNote:'Edit note',notePhA:'Note about this client',noteSaved:'Note saved',save:'Save',stat4w:'Workouts, 4 wks',statAvg:'Per week',statStreak:'Weeks in a row',discard:'Discard unsaved changes?',
   up:'Move up',down:'Move down',remove:'Remove',edName:'Exercise',edSets:'Sets',edReps:'Reps',edUnit:'Type',edRest:'Rest, min',edRpe:'RPE',edSide:'Per side',edMuscles:'Muscles (comma-separated, main first)',edNote:'Comment',
   edAlt:'Alternative exercise',edAltName:'Alternative name',edDay:d=>`Day ${d}`,edTitle:'Title',edFocus:'Focus',edCardioName:'Cardio',edMin:'Minutes',edHr:'Heart rate',addEx:'+ Exercise',addDay:'+ Day',delDay:'Delete day',
-  edErr:'Every exercise needs a name and at least 1 set',
+  edErr:'Every exercise needs a name and at least 1 set',clientLang:'Client language',langSaved:'Language saved',
 },
 ru:{
   'col.yellow':'Жёлтая','col.bw':'Ч/Б','col.mint':'Мятная','col.blue':'Синяя','col.toxic':'Ядовитая','col.red':'Красная','col.tiffany':'Тиффани','col.claude':'Claude',
@@ -437,11 +437,13 @@ ru:{
   editNote:'Изменить заметку',notePhA:'Заметка о подопечном',noteSaved:'Заметка сохранена',save:'Сохранить',stat4w:'Тренировок за 4 нед.',statAvg:'В неделю',statStreak:'Недель подряд',discard:'Отменить несохранённые изменения?',
   up:'Выше',down:'Ниже',remove:'Удалить',edName:'Упражнение',edSets:'Подходы',edReps:'Повторы',edUnit:'Тип',edRest:'Отдых, мин',edRpe:'RPE',edSide:'На сторону',edMuscles:'Мышцы (через запятую, главная первой)',edNote:'Комментарий',
   edAlt:'Замена',edAltName:'Название замены',edDay:d=>`День ${d}`,edTitle:'Название',edFocus:'Фокус',edCardioName:'Кардио',edMin:'Минуты',edHr:'Пульс',addEx:'+ Упражнение',addDay:'+ День',delDay:'Удалить день',
-  edErr:'У каждого упражнения должны быть название и хотя бы 1 подход',
+  edErr:'У каждого упражнения должны быть название и хотя бы 1 подход',clientLang:'Язык подопечного',langSaved:'Язык сохранён',
 }};
 const t=(k,...a)=>{const v=T[lang][k]??T.en[k]??k;return typeof v==='function'?v(...a):v};
 const MUSCLE_EN={'Ягодицы':'Glutes','Заднее бедро':'Hamstrings','Квадрицепс':'Quads','Спина':'Back','Грудь':'Chest','Пресс':'Abs','Бицепс':'Biceps','Трицепс':'Triceps','Плечи':'Shoulders','Низ спины':'Lower back','Верх спины':'Upper back','Задняя дельта':'Rear delts','Передняя дельта':'Front delts','Средняя дельта':'Side delts','Средняя ягодичная':'Glute med','Икры':'Calves','Предплечья':'Forearms','Трапеции':'Traps','Приводящие':'Adductors','Другое':'Other'};
-const mg=g=>lang==='ru'?g:(MUSCLE_EN[g]||g);
+const MUSCLE_RU=Object.fromEntries(Object.entries(MUSCLE_EN).map(([r,e])=>[e,r]));
+const canon=g=>MUSCLE_EN[g]||g; // в таблице мышцы можно писать и по-русски, и по-английски
+const mg=g=>lang==='ru'?(MUSCLE_RU[canon(g)]||g):canon(g);
 /* ---------- перевод текстов из таблицы (названия, комментарии, фокус, кардио) ----------
    Ключ — русский текст как в таблице, значение — английский. Нет в словаре → показывается как есть.
    Новое упражнение или правка комментария в таблице → добавить строку сюда и выложить сайт.
@@ -481,10 +483,12 @@ const TR={
 'Тяга с упором грудью':'Chest-supported row','Румынская тяга с гантелями':'Dumbbell Romanian deadlift','Тяга верхнего блока нейтр. хватом':'Neutral-grip lat pulldown',
 };
 const untranslated=new Set();
-const tr=s=>{if(lang==='ru'||!s)return s;const v=TR[s];if(v===undefined){untranslated.add(s);return s}return v};
+const TR_RU=Object.fromEntries(Object.entries(TR).map(([r,e])=>[e,r]));
+// тексты в таблице можно писать на любом из двух языков: переводится в тот, который выбран; нет в словаре → как есть
+const tr=s=>{if(!s)return s;const to=lang==='ru'?TR_RU:TR,from=lang==='ru'?TR:TR_RU;const v=to[s];if(v!==undefined)return v;if(!(s in from))untranslated.add(s);return s};
 
 const dayTitle=p=>tr(String(p.title||'')).replace(/^День(?=\s)/,t('day'));
-function setLang(l){lang=l;document.documentElement.lang=l;try{localStorage.setItem('vt_lang',l)}catch(e){}render()}
+function setLang(l){lang=l;langChosen=true;document.documentElement.lang=l;try{localStorage.setItem('vt_lang',l)}catch(e){}render()}
 // лица самочувствия: 1 доволен · 2 нейтрально · 3 слегка недоволен · 4 боль
 const FACE=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/>${
   n===4?'<path d="M8.2 8.7l2.4 2.4M10.6 8.7l-2.4 2.4M13.4 8.7l2.4 2.4M15.8 8.7l-2.4 2.4"/>':'<circle cx="9.2" cy="10" r=".9" fill="currentColor" stroke="none"/><circle cx="14.8" cy="10" r=".9" fill="currentColor" stroke="none"/>'}<path d="${
@@ -501,6 +505,7 @@ if(CODE){try{localStorage.setItem('vt_code',CODE)}catch(e){}}
 
 const KEY='vt_'+(CODE||'none');
 const store=load();
+if(!langChosen&&LANGS.some(l=>l[0]===store.clientLang)){lang=store.clientLang;document.documentElement.lang=lang}
 function load(){let s=null;try{s=JSON.parse(localStorage.getItem(KEY))}catch(e){}return Object.assign({sessions:[],draft:null,lastExport:0,days:null},s||{})}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}}
 
@@ -524,9 +529,9 @@ function setProgram(days){
   ALL_EX={};DAYS.forEach(d=>PROGRAM[d].ex.forEach(e=>{ALL_EX[e.id]=e;if(e.alt)ALL_EX[e.alt.id]={...e,...e.alt,muscles:e.alt.muscles||e.muscles}}));
 }
 const variant=(ex,v)=>v==='alt'&&ex.alt?{...ex,...ex.alt,muscles:ex.alt.muscles||ex.muscles}:ex;
-const GROUP_ALIAS={'Низ спины':'Спина','Верх спины':'Спина','Средняя ягодичная':'Ягодицы'};
-const GROUP_ORDER=['Ягодицы','Заднее бедро','Квадрицепс','Спина','Грудь','Пресс'];
-const groupOf=e=>{const g=(e.muscles&&e.muscles[0])||'Другое';return GROUP_ALIAS[g]||g};
+const GROUP_ALIAS={'Lower back':'Back','Upper back':'Back','Glute med':'Glutes'};
+const GROUP_ORDER=['Glutes','Hamstrings','Quads','Back','Chest','Abs'];
+const groupOf=e=>{const g=canon((e.muscles&&e.muscles[0])||'Other');return GROUP_ALIAS[g]||g};
 const sorted=()=>[...store.sessions].sort((a,b)=>b.date.localeCompare(a.date)||b.saved-a.saved);
 const lastSession=()=>sorted()[0];
 function nextDay(){const l=lastSession();if(!l||!DAYS.length)return DAYS[0];const i=DAYS.indexOf(l.day);return DAYS[(i+1)%DAYS.length]}
@@ -545,7 +550,7 @@ const segs=(n,cols)=>Array.from({length:cols},(_,k)=>k+1<=n+1e-9?'<i class="on">
 const hasW=u=>u==='kg'||u==='kgs';
 // Объём: первая мышца получает подход целиком, остальные — по половине (одна группа в упражнении — один раз)
 function weeklyVolume(){const v={};DAYS.forEach(d=>PROGRAM[d].ex.forEach(e=>{const w={};
-    (e.muscles&&e.muscles.length?e.muscles:['Другое']).forEach((m,i)=>{const g=GROUP_ALIAS[m]||m;w[g]=Math.max(w[g]||0,i?.5:1)});
+    (e.muscles&&e.muscles.length?e.muscles:['Other']).forEach((m,i)=>{const g=GROUP_ALIAS[canon(m)]||canon(m);w[g]=Math.max(w[g]||0,i?.5:1)});
     Object.entries(w).forEach(([g,k])=>{v[g]=(v[g]||0)+k*e.sets})}));
   const rank=g=>{const i=GROUP_ORDER.indexOf(g);return i<0?99:i};
   return Object.fromEntries(Object.entries(v).sort((a,b)=>rank(a[0])-rank(b[0])))}
@@ -703,6 +708,7 @@ async function refresh(){
   try{
     const r=await api();
     if(!r.ok){sync=r.error==='unknown_client'?'bad':'err';render();return}
+    if(r.client&&LANGS.some(l=>l[0]===r.client.lang)){store.clientLang=r.client.lang;if(!langChosen){lang=r.client.lang;document.documentElement.lang=lang}}
     store.days=r.days;store.replies=r.replies||[];setProgram(r.days);
     const del=new Set(store.deleted||[]);
     const remote=(r.sessions||[]).filter(s=>!del.has(s.saved));
@@ -819,6 +825,7 @@ function renderAdmin(){
           <span><span class="t">${esc(c.name)}</span><small>${l?t('lastAct',agoTxt(l.date),n4):t('notYet')}</small>${actBars(activity(ss))}
             ${pain.length?`<small class="pain">⚠ ${t('pain')}: ${esc(pain.join(', '))}</small>`:''}${pl.length?`<small class="plat">${t('plateauIn',esc(pl.slice(0,2).join(', ')))}</small>`:''}</span><span class="mute">→</span></button>`}).join('')}</div>
       ${AD.addOpen?`<form class="panel ed" id="addForm"><label>${t('newClient')}<input type="text" id="addName" placeholder="${t('namePh')}" autocomplete="off"></label>
+        <label>${t('clientLang')}<select id="addLang">${LANGS.map(([k,n])=>`<option value="${k}"${lang===k?' selected':''}>${n}</option>`).join('')}</select></label>
         <div class="btnrow"><button class="btn y" type="submit">${t('create')}</button><button class="btn" type="button" data-aaddcancel>${t('cancel')}</button></div></form>`
         :`<div class="btnrow"><button class="btn y" data-aadd>+ ${t('addClient')}</button></div>`}`;
     return}
@@ -838,6 +845,7 @@ function renderAdmin(){
     <div class="intro"><h1>${esc(c.name)}</h1>
       ${AD.noteEdit?`<div class="ed"><textarea id="cnote" placeholder="${t('notePhA')}">${esc(c.note||'')}</textarea><div class="btnrow"><button class="btn y" data-anotesave>${t('save')}</button><button class="btn" data-anotecancel>${t('cancel')}</button></div></div>`
         :`${c.note?`<p>${esc(c.note)}</p>`:''}<div><button class="btn small" data-anote>${t('editNote')}</button></div>`}</div>
+    <div class="ed"><label>${t('clientLang')}<select data-alang>${LANGS.map(([k,n])=>`<option value="${k}"${(c.lang||'')===k?' selected':''}>${n}</option>`).join('')}${c.lang?'':'<option value="" selected>—</option>'}</select></label></div>
     <div class="panel alink"><code>${esc(c.link)}</code><button class="btn" data-acopy>${t('copy')}</button></div>
     <div class="panel"><div class="stats"><div class="stat"><b>${n4}</b><span>${t('stat4w')}</span></div><div class="stat"><b>${fmtN(Math.round(n4/4*10)/10)}</b><span>${t('statAvg')}</span></div><div class="stat"><b>${streak(act)}</b><span>${t('statStreak')}</span></div></div>
       <div style="margin-top:12px">${actBars(act)}</div>${pl.length?`<p class="small plat" style="margin:10px 0 0">${t('plateauIn',esc(pl.join(', ')))}</p>`:''}</div>
@@ -890,7 +898,7 @@ function adminClick(d){
   return false
 }
 async function adminAdd(){const name=(($('#addName')||{}).value||'').trim();if(!name)return;
-  try{const r=await adminPost({op:'addClient',name});AD.addOpen=false;AD.edit=null;await adminLoad();AD.sel=r.code;AD.tab='plan';toast(t('clientAdded'));render();scrollTo(0,0)}
+  try{const r=await adminPost({op:'addClient',name,lang:($('#addLang')||{}).value||''});AD.addOpen=false;AD.edit=null;await adminLoad();AD.sel=r.code;AD.tab='plan';toast(t('clientAdded'));render();scrollTo(0,0)}
   catch(e){toast(t('saveFail')+(e&&e.error?' ('+e.error+')':''))}}
 
 /* ---------- events ---------- */
@@ -931,6 +939,8 @@ document.addEventListener('submit',ev=>{
   location.search='?c='+encodeURIComponent(v);
 });
 document.addEventListener('input',ev=>{const t=ev.target;
+  if(ADMIN&&'alang' in t.dataset){const c=AD.clients.find(x=>x.code===AD.sel),v=t.value;
+    adminAction(()=>adminPost({op:'setClientLang',c:AD.sel,lang:v}),t('langSaved'),t('saveFail')).then(ok=>{if(ok){c.lang=v;try{localStorage.setItem('vt_admin_cache',JSON.stringify(AD.clients))}catch(e){}}});return}
   if(ADMIN&&t.dataset.ed){edSet(t.dataset.ed,t.type==='checkbox'?t.checked:t.value);return}
   if(t.dataset.ex){store.draft.ex[t.dataset.ex].sets[+t.dataset.k][t.dataset.f]=t.value.replace(',','.');save()}
   else if(t.id==='wdate'){store.draft.date=t.value||todayISO();save()}
