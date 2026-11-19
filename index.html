@@ -938,14 +938,14 @@ document.addEventListener('submit',ev=>{
   const v=$('#codeIn').value.trim();if(!v)return;
   location.search='?c='+encodeURIComponent(v);
 });
-document.addEventListener('input',ev=>{const t=ev.target;
-  if(ADMIN&&'alang' in t.dataset){const c=AD.clients.find(x=>x.code===AD.sel),v=t.value;
+document.addEventListener('input',ev=>{const el=ev.target;
+  if(ADMIN&&'alang' in el.dataset){const c=AD.clients.find(x=>x.code===AD.sel),v=el.value;
     adminAction(()=>adminPost({op:'setClientLang',c:AD.sel,lang:v}),t('langSaved'),t('saveFail')).then(ok=>{if(ok){c.lang=v;try{localStorage.setItem('vt_admin_cache',JSON.stringify(AD.clients))}catch(e){}}});return}
-  if(ADMIN&&t.dataset.ed){edSet(t.dataset.ed,t.type==='checkbox'?t.checked:t.value);return}
-  if(t.dataset.ex){store.draft.ex[t.dataset.ex].sets[+t.dataset.k][t.dataset.f]=t.value.replace(',','.');save()}
-  else if(t.id==='wdate'){store.draft.date=t.value||todayISO();save()}
-  else if(t.dataset.exnote){store.draft.ex[t.dataset.exnote].note=t.value;save()}
-  else if(t.id==='wnote'){store.draft.note=t.value;save()}
+  if(ADMIN&&el.dataset.ed){edSet(el.dataset.ed,el.type==='checkbox'?el.checked:el.value);return}
+  if(el.dataset.ex){store.draft.ex[el.dataset.ex].sets[+el.dataset.k][el.dataset.f]=el.value.replace(',','.');save()}
+  else if(el.id==='wdate'){store.draft.date=el.value||todayISO();save()}
+  else if(el.dataset.exnote){store.draft.ex[el.dataset.exnote].note=el.value;save()}
+  else if(el.id==='wnote'){store.draft.note=el.value;save()}
 });
 addEventListener('online',refresh);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&(ADMIN||view==='home'))refresh()});
