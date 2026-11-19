@@ -309,6 +309,35 @@ body[data-view=workout] .panel.ex.complete{--hf:color-mix(in srgb,var(--y) 9%,#1
 .tr{border-left:2px solid var(--y);padding:2px 0 2px 8px;color:var(--fg);white-space:pre-wrap}
 .tr span{color:var(--y);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-right:4px}
 .hitem small.pain{color:var(--danger)}
+
+/* админка: статистика, графики, редактор */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat b{display:block;font-family:var(--f-display);font-size:26px;line-height:1.1}
+.stat span{font-size:11px;font-weight:600;color:var(--mute)}
+.act{display:flex;gap:3px;align-items:flex-end;height:24px;margin-top:6px}
+.act i{flex:0 0 8px;height:max(3px,var(--h));background:var(--y)}
+.act i.z{background:var(--line)}
+.hitem small.plat,small.plat,p.plat{color:var(--amber)}
+.chip.amber{color:var(--amber);background:rgba(216,144,42,.14)}
+.pcard{display:flex;flex-direction:column;gap:6px}
+.phead{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.chart{width:100%;height:auto;display:block;background:var(--card-2)}
+.pfoot{display:flex;justify-content:space-between;font-size:12px;color:var(--mute)}
+.pfoot b{color:var(--fg)}
+.plan{display:flex;flex-direction:column;gap:6px;margin-top:14px;font-size:14px}
+.plan h2{margin-bottom:2px}
+.ed{display:flex;flex-direction:column;gap:12px}
+.ed label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.ed input[type=text],.ed select,.ed textarea{width:100%;background:var(--card-2);border:1px solid var(--line);color:var(--fg);border-radius:2px;padding:9px 10px;font:600 14px var(--f);letter-spacing:0;text-transform:none}
+.ed textarea{min-height:56px}
+.ed .chk{flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:var(--fg);align-self:end;padding-bottom:9px}
+.ed .chk input{width:18px;height:18px;accent-color:var(--y)}
+.edgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.edgrid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.exbox{border:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.02)}
+.exbox .alt{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--y-lo);padding-left:10px}
+.edtools{display:flex;gap:6px}
+.btn:disabled{opacity:.35;cursor:default}
 </style>
 </head>
 <body>
@@ -369,6 +398,12 @@ en:{
   today:'today',yesterday:'yesterday',daysAgo:n=>`${n} days ago`,
   withCardio:' · cardio',hasNotes:' · has notes',pain:'Pain reported',you:'Your reply:',reply:'Reply',editReply:'Edit reply',replyPh:'Your reply…',send:'Send',replySent:'Reply sent',replyFail:"Couldn't send the reply",
   copy:'Copy',linkCopied:'Link copied',copyFail:"Couldn't copy",tabLog:'Log',tabProg:'Progress',noWorkouts:'No workouts yet.',backClients:'← Clients',
+  actAria:l=>`Workouts per week, last 8 weeks: ${l}`,plateau:'No progress',plateauIn:n=>`Plateau: ${n}`,tabPlan:'Program',noProgram:'No program yet.',edStart:'Create program',edit:'Edit program',
+  copyFrom:'Copy a program from',copyProg:'Copy program',progCopied:'Program copied',saveFail:"Couldn't save",progSaved:'Program saved',clientAdded:'Client added',addClient:'Add client',newClient:'New client',namePh:'Name',create:'Create',
+  editNote:'Edit note',notePhA:'Note about this client',noteSaved:'Note saved',save:'Save',stat4w:'Workouts, 4 wks',statAvg:'Per week',statStreak:'Weeks in a row',discard:'Discard unsaved changes?',
+  up:'Move up',down:'Move down',remove:'Remove',edName:'Exercise',edSets:'Sets',edReps:'Reps',edUnit:'Type',edRest:'Rest, min',edRpe:'RPE',edSide:'Per side',edMuscles:'Muscles (comma-separated, main first)',edNote:'Comment',
+  edAlt:'Alternative exercise',edAltName:'Alternative name',edDay:d=>`Day ${d}`,edTitle:'Title',edFocus:'Focus',edCardioName:'Cardio',edMin:'Minutes',edHr:'Heart rate',addEx:'+ Exercise',addDay:'+ Day',delDay:'Delete day',
+  edErr:'Every exercise needs a name and at least 1 set',
 },
 ru:{
   'col.yellow':'Жёлтая','col.bw':'Ч/Б','col.mint':'Мятная','col.blue':'Синяя','col.toxic':'Ядовитая','col.red':'Красная','col.tiffany':'Тиффани','col.claude':'Claude',
@@ -397,6 +432,12 @@ ru:{
   today:'сегодня',yesterday:'вчера',daysAgo:n=>`${n} дн. назад`,
   withCardio:' · кардио',hasNotes:' · есть заметки',pain:'Сообщил о боли',you:'Твой ответ:',reply:'Ответить',editReply:'Изменить ответ',replyPh:'Твой ответ…',send:'Отправить',replySent:'Ответ отправлен',replyFail:'Не удалось отправить ответ',
   copy:'Скопировать',linkCopied:'Ссылка скопирована',copyFail:'Не получилось скопировать',tabLog:'Журнал',tabProg:'Прогресс',noWorkouts:'Тренировок пока нет.',backClients:'← Подопечные',
+  actAria:l=>`Тренировок по неделям, последние 8 недель: ${l}`,plateau:'Нет прогресса',plateauIn:n=>`Застой: ${n}`,tabPlan:'Программа',noProgram:'Программы пока нет.',edStart:'Составить программу',edit:'Редактировать программу',
+  copyFrom:'Скопировать программу от',copyProg:'Скопировать программу',progCopied:'Программа скопирована',saveFail:'Не удалось сохранить',progSaved:'Программа сохранена',clientAdded:'Подопечный добавлен',addClient:'Добавить подопечного',newClient:'Новый подопечный',namePh:'Имя',create:'Создать',
+  editNote:'Изменить заметку',notePhA:'Заметка о подопечном',noteSaved:'Заметка сохранена',save:'Сохранить',stat4w:'Тренировок за 4 нед.',statAvg:'В неделю',statStreak:'Недель подряд',discard:'Отменить несохранённые изменения?',
+  up:'Выше',down:'Ниже',remove:'Удалить',edName:'Упражнение',edSets:'Подходы',edReps:'Повторы',edUnit:'Тип',edRest:'Отдых, мин',edRpe:'RPE',edSide:'На сторону',edMuscles:'Мышцы (через запятую, главная первой)',edNote:'Комментарий',
+  edAlt:'Замена',edAltName:'Название замены',edDay:d=>`День ${d}`,edTitle:'Название',edFocus:'Фокус',edCardioName:'Кардио',edMin:'Минуты',edHr:'Пульс',addEx:'+ Упражнение',addDay:'+ День',delDay:'Удалить день',
+  edErr:'У каждого упражнения должны быть название и хотя бы 1 подход',
 }};
 const t=(k,...a)=>{const v=T[lang][k]??T.en[k]??k;return typeof v==='function'?v(...a):v};
 const MUSCLE_EN={'Ягодицы':'Glutes','Заднее бедро':'Hamstrings','Квадрицепс':'Quads','Спина':'Back','Грудь':'Chest','Пресс':'Abs','Бицепс':'Biceps','Трицепс':'Triceps','Плечи':'Shoulders','Низ спины':'Lower back','Верх спины':'Upper back','Задняя дельта':'Rear delts','Передняя дельта':'Front delts','Средняя дельта':'Side delts','Средняя ягодичная':'Glute med','Икры':'Calves','Предплечья':'Forearms','Трапеции':'Traps','Приводящие':'Adductors','Другое':'Other'};
@@ -673,15 +714,18 @@ async function refresh(){
   if(view==='home'||!DAYS.length)render();
 }
 
-/* ---------- админ-панель (просмотр + ответы тренера) ---------- */
-const AD={clients:null,err:'',forbid:false,sel:null,tab:'log',open:null,rep:null};
+/* ---------- админ-панель: журнал, прогресс, программа, подопечные, ответы ---------- */
+const AD={clients:null,err:'',forbid:false,sel:null,tab:'log',open:null,rep:null,edit:null,altOpen:new Set(),addOpen:false,noteEdit:false};
 try{AD.clients=JSON.parse(localStorage.getItem('vt_admin_cache'))}catch(e){}
+async function adminPost(body){
+  const r=await(await fetch(API_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({admin:ADMIN,...body})})).json();
+  if(!r.ok)throw r;return r}
 async function adminLoad(){
   try{const r=await(await fetch(API_URL+'?admin='+encodeURIComponent(ADMIN),{redirect:'follow'})).json();
     if(!r.ok){AD.forbid=r.error==='forbidden';AD.err=AD.forbid?t('badLink'):t('serverErr',r.error);if(AD.forbid)AD.clients=null}
     else{AD.err='';AD.forbid=false;AD.clients=r.clients;try{localStorage.setItem('vt_admin_cache',JSON.stringify(r.clients))}catch(e){}}
   }catch(e){AD.err=t('noConn')}
-  if(!AD.rep)render(); // не перерисовываем, пока тренер пишет ответ
+  if(!AD.rep&&!AD.edit)render(); // не перерисовываем, пока тренер пишет ответ или правит программу
 }
 const byDate=ss=>[...ss].sort((a,b)=>b.date.localeCompare(a.date)||b.saved-a.saved);
 const agoTxt=iso=>{const n=daysAgo(iso);return n<=0?t('today'):n===1?t('yesterday'):t('daysAgo',n)};
@@ -694,23 +738,91 @@ function progress(c){const m={};byDate(c.sessions).reverse().forEach(s=>Object.e
   return Object.values(m).sort((a,b)=>b.last.localeCompare(a.last)||a.name.localeCompare(b.name))}
 // упражнения с болью (4) за последние 2 недели
 const painOf=ss=>[...new Set(ss.filter(s=>daysAgo(s.date)<=14).flatMap(s=>Object.values(s.ex).filter(e=>e.feel===4).map(e=>tr(e.name))))];
+
+/* активность по неделям (пн–вс), серия, застой */
+const weekStart=iso=>{const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()-(d.getDay()+6)%7);return d.toISOString().slice(0,10)};
+function activity(ss,n=8){const a=Array(n).fill(0),cur=new Date(weekStart(todayISO())+'T12:00:00');
+  ss.forEach(s=>{const k=n-1+Math.round((new Date(weekStart(s.date)+'T12:00:00')-cur)/6048e5);if(k>=0&&k<n)a[k]++});return a}
+function streak(a){let i=a.length-1,n=0;if(!a[i])i--;while(i>=0&&a[i]>0){n++;i--}return n}
+const actBars=a=>`<span class="act" role="img" aria-label="${esc(t('actAria',a.join(', ')))}">${a.map(n=>`<i class="${n?'':'z'}" style="--h:${Math.min(n,5)*20}%"></i>`).join('')}</span>`;
+// «оценка» подхода: вес с поправкой на повторы (для упражнений без веса — повторы)
+const score=(b,unit)=>hasW(unit)?(+b.w||0)*(1+(+b.r||0)/30):(+b.r||0);
+// застой: последние 3 тренировки не лучше той, что была перед ними
+function plateau(c){return progress(c).filter(p=>{if(p.pts.length<4||daysAgo(p.last)>21)return false;
+  const sc=p.pts.map(x=>score(x.b,p.unit)),n=sc.length;return sc[n-4]>0&&sc.slice(-3).every(v=>v<=sc[n-4]+1e-9)}).map(p=>tr(p.name))}
+function chart(p){const pts=p.pts.slice(-12),v=pts.map(x=>hasW(p.unit)?(+x.b.w||0):(+x.b.r||0)),W=300,H=76,px=10,py=10,
+    mn=Math.min(...v),mx=Math.max(...v),X=i=>pts.length===1?W/2:px+i*(W-2*px)/(pts.length-1),Y=x=>mx===mn?H/2:H-py-(x-mn)*(H-2*py)/(mx-mn);
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(tr(p.name))}: ${v.join(', ')}"><path d="${v.map((x,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(x).toFixed(1)).join('')}" fill="none" stroke="var(--y)" stroke-width="2" stroke-linejoin="round"/>${v.map((x,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(x).toFixed(1)}" r="3" fill="var(--y)"/>`).join('')}</svg>`}
+function progCard(p,plat){const v=p.pts.map(x=>hasW(p.unit)?(+x.b.w||0):(+x.b.r||0)),d=Math.round((v[v.length-1]-v[0])*10)/10,u=hasW(p.unit)?t('kg'):(p.unit==='s'?t('sec'):t('reps')),last=p.pts[p.pts.length-1];
+  return `<div class="pcard"><div class="phead"><b class="exn">${esc(tr(p.name))}</b>${p.pts.length>1?`<span class="chip${d>0?' side':''}">${d>0?'+':''}${fmtN(d)} ${u}</span>`:''}${plat.includes(tr(p.name))?`<span class="chip amber">${t('plateau')}</span>`:''}</div>
+    ${chart(p)}<div class="pfoot"><span>${fmtDate(p.pts[0].date,{day:'numeric',month:'short'})}</span><b>${esc(setTxt(last.b,p.unit))}</b><span>${fmtDate(last.date,{day:'numeric',month:'short'})}</span></div></div>`}
+
 function replyBox(key,r,can){
   if(AD.rep===key)return `<div class="exnote"><textarea id="rep" placeholder="${t('replyPh')}">${esc(r?r.text:'')}</textarea>
     <div class="btnrow"><button class="btn y" data-asend="${esc(key)}">${t('send')}</button><button class="btn" data-acancel>${t('cancel')}</button></div></div>`;
   return can||r?`<div><button class="btn small" data-areply="${esc(key)}">${r?t('editReply'):t('reply')}</button></div>`:'';
 }
+
+/* программа: просмотр и редактор. Редактор правит копию AD.edit, в таблицу уходит только по «Сохранить» */
+const csv=s=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);
+const UNITS=['kg','bw','s','kgs'];
+const unitLbl=u=>({kg:t('kg'),bw:t('bw'),s:t('sec'),kgs:t('kg')+' + '+t('sec')})[u]||u;
+const newId=()=>'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+function toEdit(days){const E={};Object.keys(days||{}).sort().forEach(d=>{const D=days[d],c=D.cardio||{};
+  E[d]={title:D.title===('День '+d)?'':D.title||'',focus:D.focus||'',cname:c.name||'',cmin:c.min?String(c.min):'',chr:c.hr||'',
+    ex:(D.ex||[]).map(e=>({id:e.id,name:e.name,muscles:(e.muscles||[]).join(', '),sets:String(e.sets),reps:e.reps||'',unit:e.unit||'kg',side:!!e.side,note:e.note||'',rest:e.rest||'',rpe:e.rpe||'',
+      aid:e.alt?e.alt.id:'',aname:e.alt?e.alt.name:'',amuscles:e.alt&&e.alt.muscles?e.alt.muscles.join(', '):'',anote:e.alt?e.alt.note||'':''}))}});
+  return E}
+function fromEdit(E){const out={};Object.keys(E).forEach(d=>{const D=E[d];
+  out[d]={title:D.title.trim(),focus:D.focus.trim(),cardio:D.cname.trim()?{name:D.cname.trim(),min:Number(D.cmin)||0,hr:D.chr.trim()}:null,
+    ex:D.ex.map(e=>({id:e.id,name:e.name.trim(),muscles:csv(e.muscles),sets:parseInt(e.sets,10),reps:String(e.reps).trim(),unit:e.unit,side:!!e.side,note:e.note.trim(),rest:String(e.rest).trim(),rpe:String(e.rpe).trim(),
+      alt:e.aname.trim()?{id:e.aid||e.id+'_alt',name:e.aname.trim(),muscles:csv(e.amuscles),note:e.anote.trim()}:null}))}});return out}
+const edValid=E=>Object.values(E).every(D=>D.ex.every(e=>e.name.trim()&&parseInt(e.sets,10)>0));
+function edSet(path,val){const p=path.split('|'),D=AD.edit[p[0]];if(!D)return;if(p.length===2)D[p[1]]=val;else{const e=D.ex[+p[1]];if(e)e[p[2]]=val}}
+const inp=(path,val,ph,mode)=>`<input type="text"${mode?` inputmode="${mode}"`:''} data-ed="${esc(path)}" value="${esc(val)}" placeholder="${esc(ph||'')}" autocomplete="off">`;
+function exEd(d,i,e,n){const k=d+'|'+i+'|',alt=AD.altOpen.has(e.id)||e.aname;
+  return `<div class="exbox"><div class="exhead"><b class="exn"><span class="idx">${i+1}</span></b><div class="edtools">
+      <button class="btn small" data-edup="${d}|${i}" aria-label="${t('up')}"${i?'':' disabled'}>↑</button><button class="btn small" data-eddn="${d}|${i}" aria-label="${t('down')}"${i<n-1?'':' disabled'}>↓</button><button class="btn small danger" data-eddel="${d}|${i}" aria-label="${t('remove')}">✕</button></div></div>
+    <label>${t('edName')}${inp(k+'name',e.name)}</label>
+    <div class="edgrid"><label>${t('edSets')}${inp(k+'sets',e.sets,'','numeric')}</label><label>${t('edReps')}${inp(k+'reps',e.reps,'8-12')}</label>
+      <label>${t('edUnit')}<select data-ed="${k}unit">${UNITS.map(u=>`<option value="${u}"${e.unit===u?' selected':''}>${unitLbl(u)}</option>`).join('')}</select></label></div>
+    <div class="edgrid"><label>${t('edRest')}${inp(k+'rest',e.rest,'2')}</label><label>${t('edRpe')}${inp(k+'rpe',e.rpe,'8-9')}</label><label class="chk"><input type="checkbox" data-ed="${k}side"${e.side?' checked':''}>${t('edSide')}</label></div>
+    <label>${t('edMuscles')}${inp(k+'muscles',e.muscles)}</label>
+    <label>${t('edNote')}<textarea data-ed="${k}note">${esc(e.note)}</textarea></label>
+    ${alt?`<div class="alt"><label>${t('edAltName')}${inp(k+'aname',e.aname)}</label><label>${t('edMuscles')}${inp(k+'amuscles',e.amuscles)}</label><label>${t('edNote')}<textarea data-ed="${k}anote">${esc(e.anote)}</textarea></label></div>`
+      :`<div><button class="btn small" data-edalt="${esc(e.id)}">+ ${t('edAlt')}</button></div>`}</div>`}
+function dayEd(d,D){return `<section class="panel ed"><h2 style="color:var(--y)">${t('edDay',d)}</h2>
+  <div class="edgrid2"><label>${t('edTitle')}${inp(d+'|title',D.title,t('day')+' '+d)}</label><label>${t('edFocus')}${inp(d+'|focus',D.focus)}</label></div>
+  <div class="edgrid"><label>${t('edCardioName')}${inp(d+'|cname',D.cname)}</label><label>${t('edMin')}${inp(d+'|cmin',D.cmin,'20','numeric')}</label><label>${t('edHr')}${inp(d+'|chr',D.chr,'120–135')}</label></div>
+  ${D.ex.map((e,i)=>exEd(d,i,e,D.ex.length)).join('')}
+  <div class="btnrow"><button class="btn" data-edaddex="${d}">${t('addEx')}</button><button class="btn danger" data-eddelday="${d}">${t('delDay')}</button></div></section>`}
+function editView(){return `<div class="ed">${Object.keys(AD.edit).sort().map(d=>dayEd(d,AD.edit[d])).join('')}
+  <div class="btnrow"><button class="btn" data-edaddday>${t('addDay')}</button></div>
+  <div class="btnrow"><button class="btn y" data-edsave>${t('save')}</button><button class="btn" data-edcancel>${t('cancel')}</button></div></div>`}
+function planView(c){const D=c.days||{},ks=Object.keys(D).filter(k=>D[k].ex&&D[k].ex.length).sort();
+  if(!ks.length){const others=AD.clients.filter(x=>x.code!==c.code&&x.days&&Object.keys(x.days).length);
+    return `<p class="empty">${t('noProgram')}</p><div class="btnrow" style="margin-top:12px"><button class="btn y" data-edstart>${t('edStart')}</button></div>
+      ${others.length?`<div class="ed" style="margin-top:16px"><label>${t('copyFrom')}<select id="copyFrom">${others.map(o=>`<option value="${esc(o.code)}">${esc(o.name)}</option>`).join('')}</select></label><div class="btnrow"><button class="btn" data-acopyprog>${t('copyProg')}</button></div></div>`:''}`}
+  return `<div class="btnrow" style="margin-bottom:12px"><button class="btn y" data-edstart>${t('edit')}</button></div>`+ks.map(k=>{const d=D[k];
+    return `<div class="plan"><h2>${esc(dayTitle(d))}${d.focus?' · '+esc(tr(d.focus)):''}</h2>${d.ex.map((e,i)=>`<div><b>${i+1}. ${esc(tr(e.name))}</b> <span class="mute">${e.sets}×${esc(e.reps)} ${unitLbl(e.unit)}${e.side?' · '+t('edSide'):''}${e.rest?' · '+t('rest',esc(restTxt(e.rest))):''}</span>${e.alt?`<br><small class="mute">⇄ ${esc(tr(e.alt.name))}</small>`:''}</div>`).join('')}
+      ${d.cardio?`<div class="mute">${esc(tr(d.cardio.name))}${d.cardio.min?', '+d.cardio.min+' '+t('min'):''}</div>`:''}</div>`}).join('')}
+
 function renderAdmin(){
   document.body.dataset.view='admin';dock.hidden=true;
   if(!AD.clients){app.innerHTML=`${header()}<div class="intro"><h1>${t('clients')}</h1><p>${AD.err||t('loadingA')}</p></div>${AD.err&&!AD.forbid?`<div class="btnrow"><button class="btn y" data-retry>${t('retry')}</button></div>`:''}`;return}
   const c=AD.sel&&AD.clients.find(x=>x.code===AD.sel);
-  if(!c){AD.sel=null;
+  if(!c){AD.sel=null;AD.edit=null;
     const rows=AD.clients.map(c=>({c,ss:byDate(c.sessions)})).sort((a,b)=>(b.ss[0]?b.ss[0].date:'').localeCompare(a.ss[0]?a.ss[0].date:''));
     app.innerHTML=`${header()}<div class="intro"><h1>${t('clients')}</h1>${AD.err?`<p class="small sync off">${AD.err} ${t('savedData')}</p>`:''}</div>
-      <div class="panel">${rows.map(({c,ss})=>{const l=ss[0],n4=ss.filter(s=>daysAgo(s.date)<28).length,warn=!l||daysAgo(l.date)>7,pain=painOf(ss);
+      <div class="panel">${rows.map(({c,ss})=>{const l=ss[0],n4=ss.filter(s=>daysAgo(s.date)<28).length,warn=!l||daysAgo(l.date)>7,pain=painOf(ss),pl=plateau(c);
         return `<button class="hitem${warn?' warn':''}" data-aclient="${esc(c.code)}"><span class="d">${esc(c.name.slice(0,1))}</span>
-          <span><span class="t">${esc(c.name)}</span><small>${l?t('lastAct',agoTxt(l.date),n4):t('notYet')}</small>${pain.length?`<small class="pain">⚠ ${t('pain')}: ${esc(pain.join(', '))}</small>`:''}</span><span class="mute">→</span></button>`}).join('')}</div>`;
+          <span><span class="t">${esc(c.name)}</span><small>${l?t('lastAct',agoTxt(l.date),n4):t('notYet')}</small>${actBars(activity(ss))}
+            ${pain.length?`<small class="pain">⚠ ${t('pain')}: ${esc(pain.join(', '))}</small>`:''}${pl.length?`<small class="plat">${t('plateauIn',esc(pl.slice(0,2).join(', ')))}</small>`:''}</span><span class="mute">→</span></button>`}).join('')}</div>
+      ${AD.addOpen?`<form class="panel ed" id="addForm"><label>${t('newClient')}<input type="text" id="addName" placeholder="${t('namePh')}" autocomplete="off"></label>
+        <div class="btnrow"><button class="btn y" type="submit">${t('create')}</button><button class="btn" type="button" data-aaddcancel>${t('cancel')}</button></div></form>`
+        :`<div class="btnrow"><button class="btn y" data-aadd>+ ${t('addClient')}</button></div>`}`;
     return}
-  const ss=byDate(c.sessions);
+  const ss=byDate(c.sessions),act=activity(ss),n4=ss.filter(s=>daysAgo(s.date)<28).length,pl=plateau(c);
   const log=ss.length?ss.map(s=>{const n=Object.values(s.ex).reduce((a,e)=>a+e.sets.filter(x=>x&&x.done).length,0),open=AD.open===s.saved;
     return `<button class="hitem" data-ahist="${s.saved}" aria-expanded="${open}"><span class="d">${esc(s.day)}</span>
       <span><span class="t">${fmtDate(s.date,{weekday:'long',day:'numeric',month:'long'})}</span><small>${t('setsN',n)}${s.cardio?t('withCardio'):''}${s.note||Object.values(s.ex).some(e=>e.note)?t('hasNotes'):''}</small></span>
@@ -719,29 +831,34 @@ function renderAdmin(){
         return `<div><b>${esc(tr(e.name))}</b> ${e.feel?feelIcon(e.feel):''} ${exSets(e)}${e.note?`<br><i>«${esc(e.note)}»</i>`:''}${trHtml(r,t('you'))}${replyBox(s.saved+'|'+id,r,e.note||e.feel)}</div>`}).join('')}
         ${s.note?`<div><i>«${esc(s.note)}»</i></div>`:''}${(()=>{const r=replyOf(c.replies,s.saved,'');return trHtml(r,t('you'))+replyBox(s.saved+'|',r,s.note)})()}</div>`:''}`}).join(''):`<p class="empty">${t('noWorkouts')}</p>`;
   const pr=progress(c);
-  const prog=pr.length?`<div class="prog">${pr.map(p=>{const pts=p.pts.slice(-8);
-    return `<div><b class="exn">${esc(tr(p.name))}</b><div class="pl">${p.pts.length>8?'… → ':''}${pts.map(x=>`${fmtDate(x.date,{day:'numeric',month:'short'})} <b>${esc(setTxt(x.b,p.unit))}</b>`).join(' → ')}</div></div>`}).join('')}</div>`:`<p class="empty">${t('noWorkouts')}</p>`;
+  const prog=pr.length?`<div class="prog">${pr.map(p=>progCard(p,pl)).join('')}</div>`:`<p class="empty">${t('noWorkouts')}</p>`;
+  const body=AD.tab==='prog'?prog:AD.tab==='plan'?(AD.edit?editView():planView(c)):log;
   app.innerHTML=`${header()}
     <div class="btnrow"><button class="btn" data-aback>${t('backClients')}</button></div>
-    <div class="intro"><h1>${esc(c.name)}</h1>${c.note?`<p>${esc(c.note)}</p>`:''}</div>
+    <div class="intro"><h1>${esc(c.name)}</h1>
+      ${AD.noteEdit?`<div class="ed"><textarea id="cnote" placeholder="${t('notePhA')}">${esc(c.note||'')}</textarea><div class="btnrow"><button class="btn y" data-anotesave>${t('save')}</button><button class="btn" data-anotecancel>${t('cancel')}</button></div></div>`
+        :`${c.note?`<p>${esc(c.note)}</p>`:''}<div><button class="btn small" data-anote>${t('editNote')}</button></div>`}</div>
     <div class="panel alink"><code>${esc(c.link)}</code><button class="btn" data-acopy>${t('copy')}</button></div>
-    <div class="section"><div class="atabs"><button class="btn${AD.tab==='log'?' y':''}" data-atab="log">${t('tabLog')}</button><button class="btn${AD.tab==='prog'?' y':''}" data-atab="prog">${t('tabProg')}</button></div></div>
-    <div class="section"><div class="panel">${AD.tab==='prog'?prog:log}</div></div>`;
+    <div class="panel"><div class="stats"><div class="stat"><b>${n4}</b><span>${t('stat4w')}</span></div><div class="stat"><b>${fmtN(Math.round(n4/4*10)/10)}</b><span>${t('statAvg')}</span></div><div class="stat"><b>${streak(act)}</b><span>${t('statStreak')}</span></div></div>
+      <div style="margin-top:12px">${actBars(act)}</div>${pl.length?`<p class="small plat" style="margin:10px 0 0">${t('plateauIn',esc(pl.join(', ')))}</p>`:''}</div>
+    <div class="section"><div class="atabs"><button class="btn${AD.tab==='log'?' y':''}" data-atab="log">${t('tabLog')}</button><button class="btn${AD.tab==='prog'?' y':''}" data-atab="prog">${t('tabProg')}</button><button class="btn${AD.tab==='plan'?' y':''}" data-atab="plan">${t('tabPlan')}</button></div></div>
+    <div class="section"><div class="panel">${body}</div></div>`;
 }
 async function adminReply(key){
   const i=key.indexOf('|'),sid=+key.slice(0,i),ex=key.slice(i+1),text=(($('#rep')||{}).value||'').trim();
-  try{const r=await(await fetch(API_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({admin:ADMIN,op:'reply',c:AD.sel,sid,ex,text})})).json();
-    if(!r.ok)throw r;
+  try{await adminPost({op:'reply',c:AD.sel,sid,ex,text});
     const c=AD.clients.find(x=>x.code===AD.sel);c.replies=(c.replies||[]).filter(x=>!(x.sid===sid&&x.ex===ex));
     if(text)c.replies.push({sid,ex,text,at:Date.now()});
     try{localStorage.setItem('vt_admin_cache',JSON.stringify(AD.clients))}catch(e){}
     AD.rep=null;toast(t('replySent'));keepScroll(render)
   }catch(e){toast(t('replyFail'))}
 }
+async function adminAction(fn,okMsg,failMsg){try{await fn();if(okMsg)toast(okMsg);return true}catch(e){toast(failMsg+(e&&e.error?' ('+e.error+')':''));return false}}
+const swapEx=(d,i,j)=>{const a=AD.edit[d].ex;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]]};
 function adminClick(d){
-  if(d.aclient){AD.sel=d.aclient;AD.tab='log';AD.open=null;AD.rep=null;render();scrollTo(0,0);return true}
-  if('aback' in d){AD.sel=null;AD.rep=null;render();scrollTo(0,0);return true}
-  if(d.atab){AD.tab=d.atab;AD.rep=null;keepScroll(render);return true}
+  if(d.aclient){AD.sel=d.aclient;AD.tab='log';AD.open=null;AD.rep=null;AD.edit=null;AD.noteEdit=false;render();scrollTo(0,0);return true}
+  if('aback' in d){AD.sel=null;AD.rep=null;AD.edit=null;render();scrollTo(0,0);return true}
+  if(d.atab){if(AD.edit&&!confirm(t('discard')))return true;AD.tab=d.atab;AD.rep=null;AD.edit=null;keepScroll(render);return true}
   if(d.ahist){AD.open=AD.open===+d.ahist?null:+d.ahist;AD.rep=null;keepScroll(render);return true}
   if(d.areply){AD.rep=d.areply;keepScroll(render);const r=$('#rep');if(r)r.focus({preventScroll:true});return true}
   if('acancel' in d){AD.rep=null;keepScroll(render);return true}
@@ -749,8 +866,32 @@ function adminClick(d){
   if('acopy' in d){const c=AD.clients.find(x=>x.code===AD.sel);
     navigator.clipboard.writeText(c.link).then(()=>toast(t('linkCopied')),()=>toast(t('copyFail')));return true}
   if('retry' in d){AD.err='';render();adminLoad();return true}
+  /* подопечные и заметка */
+  if('aadd' in d){AD.addOpen=true;render();const i=$('#addName');if(i)i.focus();return true}
+  if('aaddcancel' in d){AD.addOpen=false;render();return true}
+  if('anote' in d){AD.noteEdit=true;keepScroll(render);return true}
+  if('anotecancel' in d){AD.noteEdit=false;keepScroll(render);return true}
+  if('anotesave' in d){const note=($('#cnote')||{}).value||'',c=AD.clients.find(x=>x.code===AD.sel);
+    adminAction(()=>adminPost({op:'setNote',c:AD.sel,note}),t('noteSaved'),t('saveFail')).then(ok=>{if(ok){c.note=note.trim();AD.noteEdit=false;try{localStorage.setItem('vt_admin_cache',JSON.stringify(AD.clients))}catch(e){}keepScroll(render)}});return true}
+  if('acopyprog' in d){const from=($('#copyFrom')||{}).value;if(!from)return true;
+    adminAction(()=>adminPost({op:'copyProgram',c:AD.sel,from}),t('progCopied'),t('saveFail')).then(ok=>{if(ok)adminLoad()});return true}
+  /* редактор программы */
+  if('edstart' in d){const c=AD.clients.find(x=>x.code===AD.sel);AD.edit=toEdit(c.days);if(!Object.keys(AD.edit).length)AD.edit={A:{title:'',focus:'',cname:'',cmin:'',chr:'',ex:[]}};keepScroll(render);return true}
+  if('edcancel' in d){AD.edit=null;keepScroll(render);return true}
+  if(d.edup){const [x,i]=d.edup.split('|');swapEx(x,+i,+i-1);keepScroll(render);return true}
+  if(d.eddn){const [x,i]=d.eddn.split('|');swapEx(x,+i,+i+1);keepScroll(render);return true}
+  if(d.eddel){const [x,i]=d.eddel.split('|');AD.edit[x].ex.splice(+i,1);keepScroll(render);return true}
+  if(d.edalt){AD.altOpen.add(d.edalt);keepScroll(render);return true}
+  if(d.edaddex){AD.edit[d.edaddex].ex.push({id:newId(),name:'',muscles:'',sets:'3',reps:'',unit:'kg',side:false,note:'',rest:'',rpe:'',aid:'',aname:'',amuscles:'',anote:''});keepScroll(render);return true}
+  if(d.eddelday){delete AD.edit[d.eddelday];keepScroll(render);return true}
+  if('edaddday' in d){const L='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').find(x=>!AD.edit[x]);if(L)AD.edit[L]={title:'',focus:'',cname:'',cmin:'',chr:'',ex:[]};keepScroll(render);return true}
+  if('edsave' in d){if(!edValid(AD.edit)){toast(t('edErr'));return true}
+    adminAction(()=>adminPost({op:'saveProgram',c:AD.sel,days:fromEdit(AD.edit)}),t('progSaved'),t('saveFail')).then(ok=>{if(ok){AD.edit=null;adminLoad()}});return true}
   return false
 }
+async function adminAdd(){const name=(($('#addName')||{}).value||'').trim();if(!name)return;
+  try{const r=await adminPost({op:'addClient',name});AD.addOpen=false;AD.edit=null;await adminLoad();AD.sel=r.code;AD.tab='plan';toast(t('clientAdded'));render();scrollTo(0,0)}
+  catch(e){toast(t('saveFail')+(e&&e.error?' ('+e.error+')':''))}}
 
 /* ---------- events ---------- */
 document.addEventListener('click',ev=>{
@@ -784,11 +925,13 @@ document.addEventListener('click',ev=>{
   if('seen' in d){store.seen=[...new Set([...(store.seen||[]),...(store.replies||[]).map(rkey)])];save();render();return}
 });
 document.addEventListener('submit',ev=>{
+  if(ev.target.id==='addForm'){ev.preventDefault();adminAdd();return}
   if(ev.target.id!=='codeForm')return;ev.preventDefault();
   const v=$('#codeIn').value.trim();if(!v)return;
   location.search='?c='+encodeURIComponent(v);
 });
 document.addEventListener('input',ev=>{const t=ev.target;
+  if(ADMIN&&t.dataset.ed){edSet(t.dataset.ed,t.type==='checkbox'?t.checked:t.value);return}
   if(t.dataset.ex){store.draft.ex[t.dataset.ex].sets[+t.dataset.k][t.dataset.f]=t.value.replace(',','.');save()}
   else if(t.id==='wdate'){store.draft.date=t.value||todayISO();save()}
   else if(t.dataset.exnote){store.draft.ex[t.dataset.exnote].note=t.value;save()}
