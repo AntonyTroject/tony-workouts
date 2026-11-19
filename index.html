@@ -338,6 +338,10 @@ body[data-view=workout] .panel.ex.complete{--hf:color-mix(in srgb,var(--y) 9%,#1
 .exbox .alt{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--y-lo);padding-left:10px}
 .edtools{display:flex;gap:6px}
 .btn:disabled{opacity:.35;cursor:default}
+
+.mchips{display:flex;flex-wrap:wrap;gap:6px}
+.mchip{appearance:none;border:1px solid var(--line);background:var(--card-2);color:var(--mute);font:600 12px var(--f);padding:6px 9px;cursor:pointer}
+.mchip.on{color:var(--y);border-color:var(--y);background:rgba(var(--yr),.1)}
 </style>
 </head>
 <body>
@@ -482,6 +486,10 @@ const TR={
 // старые названия из журнала
 'Тяга с упором грудью':'Chest-supported row','Румынская тяга с гантелями':'Dumbbell Romanian deadlift','Тяга верхнего блока нейтр. хватом':'Neutral-grip lat pulldown',
 };
+/* подсказка мышц для редактора: название упражнения (англ.) → мышцы, главная первой. Подставляется, если поле мышц пустое */
+const EX_LIB={"Machine hip thrust": ["Glutes", "Hamstrings"], "Leg press, high foot position": ["Quads", "Glutes"], "Leg extension": ["Quads"], "Bench press": ["Chest", "Triceps"], "45° back extension": ["Lower back", "Glutes"], "Seated leg curl": ["Hamstrings"], "Single-arm seated cable row": ["Back", "Rear delts"], "Plank": ["Abs"], "Cable pull-through": ["Glutes", "Hamstrings"], "Machine hip extension": ["Glutes", "Hamstrings"], "Cable kickback": ["Glutes"], "Incline Smith press": ["Chest", "Shoulders", "Triceps"], "Leg press": ["Quads", "Glutes"], "Lying leg curl": ["Hamstrings"], "Machine hip abduction": ["Glutes"], "Single-arm lat pulldown": ["Back", "Biceps"], "Crunches": ["Abs"], "Lat pulldown": ["Back", "Biceps"], "Incline dumbbell press": ["Chest", "Shoulders", "Triceps"], "Seated cable row": ["Back", "Biceps"], "Dumbbell lateral raises": ["Shoulders"], "Dumbbell biceps curl": ["Biceps"], "Overhead triceps extension": ["Triceps"], "Leg curl": ["Hamstrings"], "Rear delt fly": ["Shoulders"], "Cable triceps pushdown": ["Triceps"], "Hammer curls": ["Biceps"], "Deadlift": ["Back", "Hamstrings", "Glutes"], "Heel-elevated Romanian deadlift": ["Hamstrings", "Glutes", "Back"], "Single-leg leg press": ["Quads", "Glutes"], "Cable rear delt fly": ["Shoulders"], "Single-arm cable triceps pushdown": ["Triceps"], "Tempo bench press 4-1-0": ["Chest", "Triceps"], "T-bar row": ["Back", "Shoulders", "Biceps"], "Bulgarian split squats": ["Quads", "Glutes"], "Smith overhead press": ["Shoulders", "Triceps"], "Cable lateral raises": ["Shoulders"], "Weighted plank": ["Abs"], "Barbell squat": ["Quads", "Glutes"], "Cable chest fly": ["Chest"], "Bayesian cable curl": ["Biceps"], "Machine hip adduction": ["Adductors"], "Cable crunches": ["Abs"]};
+const EX_LIB_LC=Object.fromEntries(Object.entries(EX_LIB).map(([k,v])=>[k.toLowerCase(),v]));
+const libMuscles=name=>{const n=String(name||'').trim();return n?EX_LIB_LC[(TR[n]||n).toLowerCase()]||null:null};
 const untranslated=new Set();
 const TR_RU=Object.fromEntries(Object.entries(TR).map(([r,e])=>[e,r]));
 // тексты в таблице можно писать на любом из двух языков: переводится в тот, который выбран; нет в словаре → как есть
@@ -782,6 +790,10 @@ function replyBox(key,r,can){
 /* программа: просмотр и редактор. Редактор правит копию AD.edit, в таблицу уходит только по «Сохранить» */
 const csv=s=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);
 const UNITS=['kg','bw','s','kgs'];
+const MUSCLES=['Glutes','Hamstrings','Quads','Calves','Back','Lower back','Chest','Shoulders','Front delts','Rear delts','Biceps','Triceps','Abs'];
+const mchips=(d,i,str)=>{const cur=csv(str).map(canon);return MUSCLES.map(m=>{const k=cur.indexOf(m);return `<button type="button" class="mchip${k>=0?' on':''}" data-edmuscle="${d}|${i}|${m}">${k>=0?(k+1)+' ':''}${esc(mg(m))}</button>`}).join('')}
+function mrefresh(d,i){const e=AD.edit[d]&&AD.edit[d].ex[i],box=document.getElementById('mc-'+d+'-'+i),f=document.querySelector(`[data-ed="${d}|${i}|muscles"]`);
+  if(!e)return;if(box)box.innerHTML=mchips(d,i,e.muscles);if(f)f.value=e.muscles}
 const unitLbl=u=>({kg:t('kg'),bw:t('bw'),s:t('sec'),kgs:t('kg')+' + '+t('sec')})[u]||u;
 const newId=()=>'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 function toEdit(days){const E={};Object.keys(days||{}).sort().forEach(d=>{const D=days[d],c=D.cardio||{};
@@ -804,6 +816,7 @@ function exEd(d,i,e,n){const k=d+'|'+i+'|',alt=AD.altOpen.has(e.id)||e.aname;
       <label>${t('edUnit')}<select data-ed="${k}unit">${UNITS.map(u=>`<option value="${u}"${e.unit===u?' selected':''}>${unitLbl(u)}</option>`).join('')}</select></label></div>
     <div class="edgrid"><label>${t('edRest')}${inp(k+'rest',e.rest,'2')}</label><label>${t('edRpe')}${inp(k+'rpe',e.rpe,'8-9')}</label><label class="chk"><input type="checkbox" data-ed="${k}side"${e.side?' checked':''}>${t('edSide')}</label></div>
     <label>${t('edMuscles')}${inp(k+'muscles',e.muscles)}</label>
+    <div class="mchips" id="mc-${d}-${i}">${mchips(d,i,e.muscles)}</div>
     <label>${t('edNote')}<textarea data-ed="${k}note">${esc(e.note)}</textarea></label>
     ${alt?`<div class="alt"><label>${t('edAltName')}${inp(k+'aname',e.aname)}</label><label>${t('edMuscles')}${inp(k+'amuscles',e.amuscles)}</label><label>${t('edNote')}<textarea data-ed="${k}anote">${esc(e.anote)}</textarea></label></div>`
       :`<div><button class="btn small" data-edalt="${esc(e.id)}">+ ${t('edAlt')}</button></div>`}</div>`}
@@ -901,6 +914,8 @@ function adminClick(d){
   if(d.edup){const [x,i]=d.edup.split('|');swapEx(x,+i,+i-1);keepScroll(render);return true}
   if(d.eddn){const [x,i]=d.eddn.split('|');swapEx(x,+i,+i+1);keepScroll(render);return true}
   if(d.eddel){const [x,i]=d.eddel.split('|');AD.edit[x].ex.splice(+i,1);keepScroll(render);return true}
+  if(d.edmuscle){const [x,i,m]=d.edmuscle.split('|'),e=AD.edit[x].ex[+i],a=csv(e.muscles).map(canon),k=a.indexOf(m);
+    if(k>=0)a.splice(k,1);else a.push(m);e.muscles=a.join(', ');mrefresh(x,+i);return true}
   if(d.edalt){AD.altOpen.add(d.edalt);keepScroll(render);return true}
   if(d.edaddex){AD.edit[d.edaddex].ex.push({id:newId(),name:'',muscles:'',sets:'3',reps:'',unit:'kg',side:false,note:'',rest:'',rpe:'',aid:'',aname:'',amuscles:'',anote:''});keepScroll(render);return true}
   if(d.eddelday){delete AD.edit[d.eddelday];keepScroll(render);return true}
@@ -952,12 +967,17 @@ document.addEventListener('submit',ev=>{
 });
 document.addEventListener('input',ev=>{const el=ev.target;
   if(ADMIN&&'alang' in el.dataset){const c=AD.clients.find(x=>x.code===AD.sel),b=$('[data-alangsave]');if(b)b.disabled=el.value===(c.lang||'en');return}
-  if(ADMIN&&el.dataset.ed){edSet(el.dataset.ed,el.type==='checkbox'?el.checked:el.value);return}
+  if(ADMIN&&el.dataset.ed){edSet(el.dataset.ed,el.type==='checkbox'?el.checked:el.value);
+    const q=el.dataset.ed.split('|');if(q.length===3&&q[2]==='muscles')mrefresh(q[0],+q[1]);return}
   if(el.dataset.ex){store.draft.ex[el.dataset.ex].sets[+el.dataset.k][el.dataset.f]=el.value.replace(',','.');save()}
   else if(el.id==='wdate'){store.draft.date=el.value||todayISO();save()}
   else if(el.dataset.exnote){store.draft.ex[el.dataset.exnote].note=el.value;save()}
   else if(el.id==='wnote'){store.draft.note=el.value;save()}
 });
+// имя упражнения введено → если мышцы пусты, подставляем из справочника (без перерисовки, чтобы не потерять клик)
+document.addEventListener('change',ev=>{const el=ev.target,q=ADMIN&&el.dataset&&el.dataset.ed?el.dataset.ed.split('|'):null;
+  if(!q||q.length!==3||q[2]!=='name')return;const e=AD.edit&&AD.edit[q[0]]&&AD.edit[q[0]].ex[+q[1]];
+  if(e&&!csv(e.muscles).length){const m=libMuscles(e.name);if(m){e.muscles=m.join(', ');mrefresh(q[0],+q[1])}}});
 addEventListener('online',refresh);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&(ADMIN||view==='home'))refresh()});
 
