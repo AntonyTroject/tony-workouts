@@ -401,7 +401,48 @@ ru:{
 const t=(k,...a)=>{const v=T[lang][k]??T.en[k]??k;return typeof v==='function'?v(...a):v};
 const MUSCLE_EN={'Ягодицы':'Glutes','Заднее бедро':'Hamstrings','Квадрицепс':'Quads','Спина':'Back','Грудь':'Chest','Пресс':'Abs','Бицепс':'Biceps','Трицепс':'Triceps','Плечи':'Shoulders','Низ спины':'Lower back','Верх спины':'Upper back','Задняя дельта':'Rear delts','Передняя дельта':'Front delts','Средняя дельта':'Side delts','Средняя ягодичная':'Glute med','Икры':'Calves','Предплечья':'Forearms','Трапеции':'Traps','Приводящие':'Adductors','Другое':'Other'};
 const mg=g=>lang==='ru'?g:(MUSCLE_EN[g]||g);
-const dayTitle=p=>String(p.title||'').replace(/^День(?=\s)/,t('day'));
+/* ---------- перевод текстов из таблицы (названия, комментарии, фокус, кардио) ----------
+   Ключ — русский текст как в таблице, значение — английский. Нет в словаре → показывается как есть.
+   Новое упражнение или правка комментария в таблице → добавить строку сюда и выложить сайт.
+   Проверка: в английском режиме `untranslated` в консоли браузера показывает, чего не хватает. */
+const TR={
+'Ягодицы и спина':'Glutes & back','Заднее бедро и ягодицы':'Hamstrings & glutes','Фулбади':'Full body','Становая и жим':'Deadlift & press','Темповый жим, спина, ноги':'Tempo press, back, legs','Присед':'Squat','Тяжёлые одиночки':'Heavy singles',
+'Понедельник':'Monday','Вторник':'Tuesday','Среда':'Wednesday','Четверг':'Thursday','Пятница':'Friday','Суббота':'Saturday','Воскресенье':'Sunday',
+'Велотренажёр':'Stationary bike','Эллипс':'Elliptical',
+'Ягодичный мостик в тренажёре':'Machine hip thrust','Ягодичный мостик':'Hip thrust',
+'Пауза 1 сек в верхней точке. Спина ровная, без прогибов, подбородок к груди.':'Pause 1 sec at the top. Keep your back flat, no arching, chin tucked to chest.',
+'Жим ногами, стопы высоко':'Leg press, high foot position','Глубина до ~90° в колене. Таз не отрывать.':'Go down to ~90° at the knee. Keep your hips on the seat.',
+'Разгибание ног':'Leg extension','Лёгкий вес, без рывка вверху. Боль в колене = стоп.':'Light weight, no jerking at the top. Knee pain = stop.',
+'Жим лёжа':'Bench press','Лопатки сведены, грудь подать вперёд. Ноги в пол, гриф к низу груди.':'Shoulder blades pinched, chest up. Feet planted, bar to the lower chest.',
+'Гиперэкстензия 45°':'45° back extension','Подконтрольная комфортная амплитуда. Только до прямой линии, без переразгибания.':'Controlled, comfortable range. Only up to a straight line, no overextension.',
+'Сгибание ног сидя':'Seated leg curl','Главное — подконтрольная негативная фаза: вниз медленно, 2–3 сек.':'Key point: controlled lowering. Take 2–3 sec on the way down.',
+'Сгибание ног лёжа':'Lying leg curl','Главное — подконтрольная негативная фаза: вниз медленно, 2–3 сек. Таз прижат к скамье.':'Key point: controlled lowering. Take 2–3 sec on the way down. Keep your hips pressed to the bench.',
+'Тяга одной рукой в горизонтальном блоке':'Single-arm seated cable row','Корпус неподвижно, не крутить. Тянуть локоть к бедру, в конце сводить лопатку.':"Keep your torso still, don't rotate. Pull the elbow toward your hip and squeeze the shoulder blade at the end.",
+'Планка':'Plank','Таз не проваливается, ягодицы напряжены.':"Don't let your hips sag, glutes tight.",
+'Протяжка в блоке':'Cable pull-through','Таз назад, спина ровная, в верхней точке сжать ягодицы. Без нагрузки на позвоночник.':'Hips back, back flat, squeeze the glutes at the top. No load on the spine.',
+'Разгибание бедра в тренажёре':'Machine hip extension','Вариант в тренажёре, без нагрузки на позвоночник.':'Machine option, no load on the spine.',
+'Кикбек':'Cable kickback','В блоке. Таз не крутить, движение от ягодицы. Слабая сторона первой.':"On the cable. Don't rotate the hips, move from the glute. Weaker side first.",
+'Жим в Смите на наклонной':'Incline Smith press','Наклон 30°, лопатки сведены, гриф к верху груди.':'30° incline, shoulder blades pinched, bar to the upper chest.',
+'Жим ногами':'Leg press','Глубина до ~90°. Колени по линии носков.':'Go down to ~90°. Knees in line with your toes.','Лёгкий вес, без рывка вверху.':'Light weight, no jerking at the top.',
+'Разведение ног в тренажёре':'Machine hip abduction','Корпус чуть вперёд, держать снаружи 1 сек.':'Lean slightly forward, hold the outside position for 1 sec.',
+'Тяга верхнего блока одной рукой':'Single-arm lat pulldown','К верху груди, корпус неподвижно, не раскачиваться.':'Pull to the upper chest, keep your torso still, no swinging.',
+'Скручивания':'Crunches','Короткая амплитуда, поясница на полу. Без рывков за шею.':"Short range, lower back on the floor. Don't yank on your neck.",
+'Тяга верхнего блока':'Lat pulldown','Жим гантелей на наклонной':'Incline dumbbell press','Горизонтальная тяга в блоке':'Seated cable row','Махи гантелями в стороны':'Dumbbell lateral raises',
+'Подъём гантелей на бицепс':'Dumbbell biceps curl','Разгибание на трицепс из-за головы':'Overhead triceps extension','Сгибание ног':'Leg curl','Отведения на заднюю дельту':'Rear delt fly',
+'Разгибание на трицепс в блоке':'Cable triceps pushdown','Молотки с гантелями':'Hammer curls',
+'Становая тяга':'Deadlift','Румынская тяга с поднятыми пятками':'Heel-elevated Romanian deadlift','Жим ногами одной ногой':'Single-leg leg press',
+'Разведения на заднюю дельту в кроссовере':'Cable rear delt fly','Разгибание на трицепс в блоке одной рукой':'Single-arm cable triceps pushdown',
+'Жим лёжа с темпом 4-1-0':'Tempo bench press 4-1-0','4 с вниз, 1 с пауза внизу, вверх без паузы.':'4 sec down, 1 sec pause at the bottom, up with no pause.',
+'Тяга Т-грифа':'T-bar row','Болгарские выпады':'Bulgarian split squats','Жим над головой в Смите':'Smith overhead press','Махи в стороны в кроссовере':'Cable lateral raises','Планка с весом':'Weighted plank',
+'Присед со штангой':'Barbell squat','Сведения рук в кроссовере':'Cable chest fly','Байесовские сгибания на бицепс':'Bayesian cable curl','Блок сзади, рука за корпусом.':'Cable behind you, arm behind your torso.',
+'Сведение ног в тренажёре':'Machine hip adduction','Скручивания на блоке':'Cable crunches',
+// старые названия из журнала
+'Тяга с упором грудью':'Chest-supported row','Румынская тяга с гантелями':'Dumbbell Romanian deadlift','Тяга верхнего блока нейтр. хватом':'Neutral-grip lat pulldown',
+};
+const untranslated=new Set();
+const tr=s=>{if(lang==='ru'||!s)return s;const v=TR[s];if(v===undefined){untranslated.add(s);return s}return v};
+
+const dayTitle=p=>tr(String(p.title||'')).replace(/^День(?=\s)/,t('day'));
 function setLang(l){lang=l;document.documentElement.lang=l;try{localStorage.setItem('vt_lang',l)}catch(e){}render()}
 // лица самочувствия: 1 доволен · 2 нейтрально · 3 слегка недоволен · 4 боль
 const FACE=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/>${
@@ -502,7 +543,7 @@ const trHtml=(r,label)=>r?`<div class="tr"><span>${label||t('trainer')}</span> $
 function repliesPanel(){
   const seen=new Set(store.seen||[]),L=(store.replies||[]).filter(r=>!seen.has(rkey(r)));if(!L.length)return '';
   return `<div class="panel saved"><span class="eyebrow">${t('trNew')}</span>${L.map(r=>{const s=store.sessions.find(x=>x.saved===r.sid);
-    const n=r.ex?(s&&s.ex[r.ex]?s.ex[r.ex].name:''):t('wnote');
+    const n=r.ex?(s&&s.ex[r.ex]?tr(s.ex[r.ex].name):''):t('wnote');
     return `<div><p class="exn" style="font-size:14px">${esc(n)}${s?' · '+fmtDate(s.date,{day:'numeric',month:'short'}):''}</p><p class="note" style="color:var(--fg);white-space:pre-wrap">${esc(r.text)}</p></div>`}).join('')}
     <div class="btnrow"><button class="btn" data-seen>${t('gotIt')}</button></div></div>`}
 
@@ -512,8 +553,8 @@ function renderHome(){
     return `<button class="day ${d===nd?'next':''}" data-start="${esc(d)}">
       <span class="tag ${d===nd?'':'off'}">${t('next')}</span>
       <span class="letter">${esc(d)}</span>
-      <span class="focus">${esc(p.focus)}</span>
-      <span class="meta">${t('setsN',p.ex.reduce((a,e)=>a+e.sets,0))}${p.cardio?' · '+esc(p.cardio.name.toLowerCase()):''}${ls?`<br>${t('last',fmtDate(ls.date,{day:'numeric',month:'short'}))}`:''}</span>
+      <span class="focus">${esc(tr(p.focus))}</span>
+      <span class="meta">${t('setsN',p.ex.reduce((a,e)=>a+e.sets,0))}${p.cardio?' · '+esc(tr(p.cardio.name).toLowerCase()):''}${ls?`<br>${t('last',fmtDate(ls.date,{day:'numeric',month:'short'}))}`:''}</span>
     </button>`};
   const ss=sorted();
   const hist=ss.length?ss.map(s=>{
@@ -521,7 +562,7 @@ function renderHome(){
     return `<button class="hitem" data-hist="${s.saved}" aria-expanded="${open}"><span class="d">${esc(s.day)}</span>
       <span><span class="t">${fmtDate(s.date,{weekday:'long',day:'numeric',month:'long'})}</span><small>${t('setsN',n)}${s.cardio?' · '+t('cardio'):''}${s.pending?' · '+t('waiting'):''}</small></span>
       <span class="mute">${open?'−':'+'}</span></button>
-      ${open?`<div class="hdetail">${Object.entries(s.ex).map(([id,e])=>`<div><b>${esc(e.name)}</b> ${e.feel?feelIcon(e.feel):''} ${e.sets.filter(x=>x.w||x.r).map(x=>setTxt(x,(ALL_EX[id]||e).unit)).join(', ')||'—'}${e.note?`<br><i>«${esc(e.note)}»</i>`:''}${trHtml(replyOf(store.replies,s.saved,id))}</div>`).join('')}
+      ${open?`<div class="hdetail">${Object.entries(s.ex).map(([id,e])=>`<div><b>${esc(tr(e.name))}</b> ${e.feel?feelIcon(e.feel):''} ${e.sets.filter(x=>x.w||x.r).map(x=>setTxt(x,(ALL_EX[id]||e).unit)).join(', ')||'—'}${e.note?`<br><i>«${esc(e.note)}»</i>`:''}${trHtml(replyOf(store.replies,s.saved,id))}</div>`).join('')}
         ${s.note?`<div><i>«${esc(s.note)}»</i></div>`:''}${trHtml(replyOf(store.replies,s.saved,''))}<div><button class="btn small danger" data-del="${s.saved}">${t('delRec')}</button></div></div>`:''}`;
   }).join(''):`<p class="empty">${t('logEmpty')}</p>`;
 
@@ -558,14 +599,14 @@ function renderWorkout(){
     const {e,rec}=draftEx(ex);const prev=lastFor(e.id);const nOpen=openNotes.has(e.id),pn=nOpen&&lastNoteFor(e.id);
     const rl=e.unit==='s'||e.unit==='kgs'?t('sec'):(e.side?t('perSide'):t('reps'));
     total+=ex.sets;done+=rec.sets.slice(0,ex.sets).filter(s=>s.done).length;
-    const other=D.variants[ex.id]==='alt'?ex.name:ex.alt&&ex.alt.name;
+    const other=tr(D.variants[ex.id]==='alt'?ex.name:ex.alt&&ex.alt.name);
     const complete=rec.sets.slice(0,ex.sets).every(s=>s.done);
     return `<section class="panel ex ${complete?'complete':''}">
-      <div class="exhead"><div><p class="exn"><span class="idx">${i+1}</span>${esc(e.name)}</p>
+      <div class="exhead"><div><p class="exn"><span class="idx">${i+1}</span>${esc(tr(e.name))}</p>
         <div class="chips">${(e.muscles||[]).map(m=>`<span class="chip">${esc(mg(m))}</span>`).join('')}</div></div>
         <div class="extools">${ex.alt?`<button class="swap" data-swap="${esc(ex.id)}" aria-label="${esc(t('swapTo',other))}">${t('swap')}</button>`:''}
         <button class="swap nbtn" data-note-toggle="${esc(e.id)}" aria-pressed="${nOpen}" aria-label="${t('noteBtn')}">${NOTE_ICON}</button></div></div>
-      ${e.note?`<p class="note">${esc(e.note)}</p>`:''}
+      ${e.note?`<p class="note">${esc(tr(e.note))}</p>`:''}
       ${e.rest?`<div class="chips"><span class="chip">${t('rest',esc(restTxt(e.rest)))}</span></div>`:''}
       ${nOpen?`<div class="exnote">
         <div class="feels" role="group" aria-label="${t('feelQ')}">${[1,2,3,4].map(n=>`<button class="feel" data-feel="${n}" data-feel-ex="${esc(e.id)}" aria-pressed="${rec.feel===n}" aria-label="${esc(t('feel'+n))}">${FACE(n)}</button>`).join('')}</div>
@@ -583,10 +624,10 @@ function renderWorkout(){
     </section>`}).join('');
   app.innerHTML=`
     <div class="top"><button class="btn" data-home>${t('back')}</button><span class="progress">${done} / ${total}</span></div>
-    <div class="wkhead"><span class="eyebrow">${esc(P.focus)}</span><h1>${esc(dayTitle(P))}</h1>
+    <div class="wkhead"><span class="eyebrow">${esc(tr(P.focus))}</span><h1>${esc(dayTitle(P))}</h1>
       <div class="daterow"><label for="wdate" class="small mute">${t('date')}</label><input type="date" id="wdate" value="${D.date}" max="${todayISO()}"></div></div>
     ${blocks}
-    ${P.cardio?`<section class="panel cardio"><div><p class="exn">${esc(P.cardio.name)}${P.cardio.min?', '+P.cardio.min+' '+t('min'):''}</p>${P.cardio.hr?`<p class="note">${t('pulse')} ${esc(P.cardio.hr)}</p>`:''}</div>
+    ${P.cardio?`<section class="panel cardio"><div><p class="exn">${esc(tr(P.cardio.name))}${P.cardio.min?', '+P.cardio.min+' '+t('min'):''}</p>${P.cardio.hr?`<p class="note">${t('pulse')} ${esc(P.cardio.hr)}</p>`:''}</div>
       <button class="tick ${D.cardio?'on':''}" data-cardio aria-label="${t('cardioDone')}" aria-pressed="${D.cardio}">${CHECK}</button></section>`:''}
     <section class="panel section"><label for="wnote" class="exn">${t('wnote')}</label><textarea id="wnote" placeholder="${t('wnotePh')}">${esc(D.note)}</textarea></section>
     <div id="confirmBox"></div>`;
@@ -652,7 +693,7 @@ function progress(c){const m={};byDate(c.sessions).reverse().forEach(s=>Object.e
     const p=m[id]||(m[id]={name:e.name,unit:e.unit,last:'',pts:[]});p.name=e.name;p.last=s.date;p.pts.push({date:s.date,b})}));
   return Object.values(m).sort((a,b)=>b.last.localeCompare(a.last)||a.name.localeCompare(b.name))}
 // упражнения с болью (4) за последние 2 недели
-const painOf=ss=>[...new Set(ss.filter(s=>daysAgo(s.date)<=14).flatMap(s=>Object.values(s.ex).filter(e=>e.feel===4).map(e=>e.name)))];
+const painOf=ss=>[...new Set(ss.filter(s=>daysAgo(s.date)<=14).flatMap(s=>Object.values(s.ex).filter(e=>e.feel===4).map(e=>tr(e.name))))];
 function replyBox(key,r,can){
   if(AD.rep===key)return `<div class="exnote"><textarea id="rep" placeholder="${t('replyPh')}">${esc(r?r.text:'')}</textarea>
     <div class="btnrow"><button class="btn y" data-asend="${esc(key)}">${t('send')}</button><button class="btn" data-acancel>${t('cancel')}</button></div></div>`;
@@ -675,11 +716,11 @@ function renderAdmin(){
       <span><span class="t">${fmtDate(s.date,{weekday:'long',day:'numeric',month:'long'})}</span><small>${t('setsN',n)}${s.cardio?t('withCardio'):''}${s.note||Object.values(s.ex).some(e=>e.note)?t('hasNotes'):''}</small></span>
       <span class="mute">${open?'−':'+'}</span></button>
       ${open?`<div class="hdetail">${Object.entries(s.ex).map(([id,e])=>{const r=replyOf(c.replies,s.saved,id);
-        return `<div><b>${esc(e.name)}</b> ${e.feel?feelIcon(e.feel):''} ${exSets(e)}${e.note?`<br><i>«${esc(e.note)}»</i>`:''}${trHtml(r,t('you'))}${replyBox(s.saved+'|'+id,r,e.note||e.feel)}</div>`}).join('')}
+        return `<div><b>${esc(tr(e.name))}</b> ${e.feel?feelIcon(e.feel):''} ${exSets(e)}${e.note?`<br><i>«${esc(e.note)}»</i>`:''}${trHtml(r,t('you'))}${replyBox(s.saved+'|'+id,r,e.note||e.feel)}</div>`}).join('')}
         ${s.note?`<div><i>«${esc(s.note)}»</i></div>`:''}${(()=>{const r=replyOf(c.replies,s.saved,'');return trHtml(r,t('you'))+replyBox(s.saved+'|',r,s.note)})()}</div>`:''}`}).join(''):`<p class="empty">${t('noWorkouts')}</p>`;
   const pr=progress(c);
   const prog=pr.length?`<div class="prog">${pr.map(p=>{const pts=p.pts.slice(-8);
-    return `<div><b class="exn">${esc(p.name)}</b><div class="pl">${p.pts.length>8?'… → ':''}${pts.map(x=>`${fmtDate(x.date,{day:'numeric',month:'short'})} <b>${esc(setTxt(x.b,p.unit))}</b>`).join(' → ')}</div></div>`}).join('')}</div>`:`<p class="empty">${t('noWorkouts')}</p>`;
+    return `<div><b class="exn">${esc(tr(p.name))}</b><div class="pl">${p.pts.length>8?'… → ':''}${pts.map(x=>`${fmtDate(x.date,{day:'numeric',month:'short'})} <b>${esc(setTxt(x.b,p.unit))}</b>`).join(' → ')}</div></div>`}).join('')}</div>`:`<p class="empty">${t('noWorkouts')}</p>`;
   app.innerHTML=`${header()}
     <div class="btnrow"><button class="btn" data-aback>${t('backClients')}</button></div>
     <div class="intro"><h1>${esc(c.name)}</h1>${c.note?`<p>${esc(c.note)}</p>`:''}</div>
