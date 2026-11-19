@@ -403,7 +403,7 @@ en:{
   editNote:'Edit note',notePhA:'Note about this client',noteSaved:'Note saved',save:'Save',stat4w:'Workouts, 4 wks',statAvg:'Per week',statStreak:'Weeks in a row',discard:'Discard unsaved changes?',
   up:'Move up',down:'Move down',remove:'Remove',edName:'Exercise',edSets:'Sets',edReps:'Reps',edUnit:'Type',edRest:'Rest, min',edRpe:'RPE',edSide:'Per side',edMuscles:'Muscles (comma-separated, main first)',edNote:'Comment',
   edAlt:'Alternative exercise',edAltName:'Alternative name',edDay:d=>`Day ${d}`,edTitle:'Title',edFocus:'Focus',edCardioName:'Cardio',edMin:'Minutes',edHr:'Heart rate',addEx:'+ Exercise',addDay:'+ Day',delDay:'Delete day',
-  edErr:'Every exercise needs a name and at least 1 set',clientLang:'Client language',langSaved:'Language saved',
+  edErr:'Every exercise needs a name and at least 1 set',clientLang:'Client language',langSaved:'Language saved',saveLang:'Save language',langHint:"Shared with the client's app: either side can change it",
 },
 ru:{
   'col.yellow':'Жёлтая','col.bw':'Ч/Б','col.mint':'Мятная','col.blue':'Синяя','col.toxic':'Ядовитая','col.red':'Красная','col.tiffany':'Тиффани','col.claude':'Claude',
@@ -437,7 +437,7 @@ ru:{
   editNote:'Изменить заметку',notePhA:'Заметка о подопечном',noteSaved:'Заметка сохранена',save:'Сохранить',stat4w:'Тренировок за 4 нед.',statAvg:'В неделю',statStreak:'Недель подряд',discard:'Отменить несохранённые изменения?',
   up:'Выше',down:'Ниже',remove:'Удалить',edName:'Упражнение',edSets:'Подходы',edReps:'Повторы',edUnit:'Тип',edRest:'Отдых, мин',edRpe:'RPE',edSide:'На сторону',edMuscles:'Мышцы (через запятую, главная первой)',edNote:'Комментарий',
   edAlt:'Замена',edAltName:'Название замены',edDay:d=>`День ${d}`,edTitle:'Название',edFocus:'Фокус',edCardioName:'Кардио',edMin:'Минуты',edHr:'Пульс',addEx:'+ Упражнение',addDay:'+ День',delDay:'Удалить день',
-  edErr:'У каждого упражнения должны быть название и хотя бы 1 подход',clientLang:'Язык подопечного',langSaved:'Язык сохранён',
+  edErr:'У каждого упражнения должны быть название и хотя бы 1 подход',clientLang:'Язык подопечного',langSaved:'Язык сохранён',saveLang:'Сохранить язык',langHint:'Общий с приложением подопечного: менять можно с обеих сторон',
 }};
 const t=(k,...a)=>{const v=T[lang][k]??T.en[k]??k;return typeof v==='function'?v(...a):v};
 const MUSCLE_EN={'Ягодицы':'Glutes','Заднее бедро':'Hamstrings','Квадрицепс':'Quads','Спина':'Back','Грудь':'Chest','Пресс':'Abs','Бицепс':'Biceps','Трицепс':'Triceps','Плечи':'Shoulders','Низ спины':'Lower back','Верх спины':'Upper back','Задняя дельта':'Rear delts','Передняя дельта':'Front delts','Средняя дельта':'Side delts','Средняя ягодичная':'Glute med','Икры':'Calves','Предплечья':'Forearms','Трапеции':'Traps','Приводящие':'Adductors','Другое':'Other'};
@@ -488,7 +488,12 @@ const TR_RU=Object.fromEntries(Object.entries(TR).map(([r,e])=>[e,r]));
 const tr=s=>{if(!s)return s;const to=lang==='ru'?TR_RU:TR,from=lang==='ru'?TR:TR_RU;const v=to[s];if(v!==undefined)return v;if(!(s in from))untranslated.add(s);return s};
 
 const dayTitle=p=>tr(String(p.title||'')).replace(/^День(?=\s)/,t('day'));
-function setLang(l){lang=l;langChosen=true;document.documentElement.lang=l;try{localStorage.setItem('vt_lang',l)}catch(e){}render()}
+function setLang(l){lang=l;langChosen=true;document.documentElement.lang=l;try{localStorage.setItem('vt_lang',l)}catch(e){}
+  if(!ADMIN&&CODE){store.langPending=l;save();pushLang()} // язык подопечного хранится в таблице: его видит и меняет тренер
+  render()}
+// отправка выбранного языка на сервер; пока не ушла, сервер не перезаписывает выбор
+async function pushLang(){const l=store.langPending;if(!l)return;
+  try{const r=await api({op:'lang',lang:l});if(r.ok){store.clientLang=l;if(store.langPending===l)delete store.langPending;save()}}catch(e){}}
 // лица самочувствия: 1 доволен · 2 нейтрально · 3 слегка недоволен · 4 боль
 const FACE=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/>${
   n===4?'<path d="M8.2 8.7l2.4 2.4M10.6 8.7l-2.4 2.4M13.4 8.7l2.4 2.4M15.8 8.7l-2.4 2.4"/>':'<circle cx="9.2" cy="10" r=".9" fill="currentColor" stroke="none"/><circle cx="14.8" cy="10" r=".9" fill="currentColor" stroke="none"/>'}<path d="${
@@ -506,6 +511,7 @@ if(CODE){try{localStorage.setItem('vt_code',CODE)}catch(e){}}
 const KEY='vt_'+(CODE||'none');
 const store=load();
 if(!langChosen&&LANGS.some(l=>l[0]===store.clientLang)){lang=store.clientLang;document.documentElement.lang=lang}
+if(!ADMIN&&CODE&&new URLSearchParams(location.search).get('lang')===lang&&LANGS.some(l=>l[0]===lang))store.langPending=lang;
 function load(){let s=null;try{s=JSON.parse(localStorage.getItem(KEY))}catch(e){}return Object.assign({sessions:[],draft:null,lastExport:0,days:null},s||{})}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}}
 
@@ -708,7 +714,11 @@ async function refresh(){
   try{
     const r=await api();
     if(!r.ok){sync=r.error==='unknown_client'?'bad':'err';render();return}
-    if(r.client&&LANGS.some(l=>l[0]===r.client.lang)){store.clientLang=r.client.lang;if(!langChosen){lang=r.client.lang;document.documentElement.lang=lang}}
+    if(r.client){const sl=LANGS.some(l=>l[0]===r.client.lang)?r.client.lang:'';
+      if(store.langPending)pushLang();
+      else if(sl){store.clientLang=sl;if(lang!==sl){lang=sl;langChosen=true;document.documentElement.lang=sl;try{localStorage.setItem('vt_lang',sl)}catch(e){}render()}}
+      else if(langChosen){store.langPending=lang;pushLang()} // сервер ещё не знает язык, а человек уже выбирал: запоминаем в таблице
+    }
     store.days=r.days;store.replies=r.replies||[];setProgram(r.days);
     const del=new Set(store.deleted||[]);
     const remote=(r.sessions||[]).filter(s=>!del.has(s.saved));
@@ -825,7 +835,7 @@ function renderAdmin(){
           <span><span class="t">${esc(c.name)}</span><small>${l?t('lastAct',agoTxt(l.date),n4):t('notYet')}</small>${actBars(activity(ss))}
             ${pain.length?`<small class="pain">⚠ ${t('pain')}: ${esc(pain.join(', '))}</small>`:''}${pl.length?`<small class="plat">${t('plateauIn',esc(pl.slice(0,2).join(', ')))}</small>`:''}</span><span class="mute">→</span></button>`}).join('')}</div>
       ${AD.addOpen?`<form class="panel ed" id="addForm"><label>${t('newClient')}<input type="text" id="addName" placeholder="${t('namePh')}" autocomplete="off"></label>
-        <label>${t('clientLang')}<select id="addLang">${LANGS.map(([k,n])=>`<option value="${k}"${lang===k?' selected':''}>${n}</option>`).join('')}</select></label>
+        <label>${t('clientLang')}<select id="addLang">${LANGS.map(([k,n])=>`<option value="${k}"${k==='en'?' selected':''}>${n}</option>`).join('')}</select></label>
         <div class="btnrow"><button class="btn y" type="submit">${t('create')}</button><button class="btn" type="button" data-aaddcancel>${t('cancel')}</button></div></form>`
         :`<div class="btnrow"><button class="btn y" data-aadd>+ ${t('addClient')}</button></div>`}`;
     return}
@@ -845,7 +855,7 @@ function renderAdmin(){
     <div class="intro"><h1>${esc(c.name)}</h1>
       ${AD.noteEdit?`<div class="ed"><textarea id="cnote" placeholder="${t('notePhA')}">${esc(c.note||'')}</textarea><div class="btnrow"><button class="btn y" data-anotesave>${t('save')}</button><button class="btn" data-anotecancel>${t('cancel')}</button></div></div>`
         :`${c.note?`<p>${esc(c.note)}</p>`:''}<div><button class="btn small" data-anote>${t('editNote')}</button></div>`}</div>
-    <div class="ed"><label>${t('clientLang')}<select data-alang>${LANGS.map(([k,n])=>`<option value="${k}"${(c.lang||'')===k?' selected':''}>${n}</option>`).join('')}${c.lang?'':'<option value="" selected>—</option>'}</select></label></div>
+    <div class="ed"><label>${t('clientLang')}<div class="btnrow"><select data-alang style="flex:1">${LANGS.map(([k,n])=>`<option value="${k}"${(c.lang||'en')===k?' selected':''}>${n}</option>`).join('')}</select><button class="btn y" data-alangsave disabled>${t('saveLang')}</button></div><small class="mute">${t('langHint')}</small></label></div>
     <div class="panel alink"><code>${esc(c.link)}</code><button class="btn" data-acopy>${t('copy')}</button></div>
     <div class="panel"><div class="stats"><div class="stat"><b>${n4}</b><span>${t('stat4w')}</span></div><div class="stat"><b>${fmtN(Math.round(n4/4*10)/10)}</b><span>${t('statAvg')}</span></div><div class="stat"><b>${streak(act)}</b><span>${t('statStreak')}</span></div></div>
       <div style="margin-top:12px">${actBars(act)}</div>${pl.length?`<p class="small plat" style="margin:10px 0 0">${t('plateauIn',esc(pl.join(', ')))}</p>`:''}</div>
@@ -881,6 +891,8 @@ function adminClick(d){
   if('anotecancel' in d){AD.noteEdit=false;keepScroll(render);return true}
   if('anotesave' in d){const note=($('#cnote')||{}).value||'',c=AD.clients.find(x=>x.code===AD.sel);
     adminAction(()=>adminPost({op:'setNote',c:AD.sel,note}),t('noteSaved'),t('saveFail')).then(ok=>{if(ok){c.note=note.trim();AD.noteEdit=false;try{localStorage.setItem('vt_admin_cache',JSON.stringify(AD.clients))}catch(e){}keepScroll(render)}});return true}
+  if('alangsave' in d){const c=AD.clients.find(x=>x.code===AD.sel),v=($('[data-alang]')||{}).value;
+    adminAction(()=>adminPost({op:'setClientLang',c:AD.sel,lang:v}),t('langSaved'),t('saveFail')).then(ok=>{if(ok){c.lang=v;try{localStorage.setItem('vt_admin_cache',JSON.stringify(AD.clients))}catch(e){}keepScroll(render)}});return true}
   if('acopyprog' in d){const from=($('#copyFrom')||{}).value;if(!from)return true;
     adminAction(()=>adminPost({op:'copyProgram',c:AD.sel,from}),t('progCopied'),t('saveFail')).then(ok=>{if(ok)adminLoad()});return true}
   /* редактор программы */
@@ -939,8 +951,7 @@ document.addEventListener('submit',ev=>{
   location.search='?c='+encodeURIComponent(v);
 });
 document.addEventListener('input',ev=>{const el=ev.target;
-  if(ADMIN&&'alang' in el.dataset){const c=AD.clients.find(x=>x.code===AD.sel),v=el.value;
-    adminAction(()=>adminPost({op:'setClientLang',c:AD.sel,lang:v}),t('langSaved'),t('saveFail')).then(ok=>{if(ok){c.lang=v;try{localStorage.setItem('vt_admin_cache',JSON.stringify(AD.clients))}catch(e){}}});return}
+  if(ADMIN&&'alang' in el.dataset){const c=AD.clients.find(x=>x.code===AD.sel),b=$('[data-alangsave]');if(b)b.disabled=el.value===(c.lang||'en');return}
   if(ADMIN&&el.dataset.ed){edSet(el.dataset.ed,el.type==='checkbox'?el.checked:el.value);return}
   if(el.dataset.ex){store.draft.ex[el.dataset.ex].sets[+el.dataset.k][el.dataset.f]=el.value.replace(',','.');save()}
   else if(el.id==='wdate'){store.draft.date=el.value||todayISO();save()}
