@@ -713,7 +713,7 @@ function adminClick(d){
 
 /* ---------- events ---------- */
 document.addEventListener('click',ev=>{
-  const t=ev.target.closest('button');if(!t)return;const d=t.dataset;
+  const btn=ev.target.closest('button');if(!btn)return;const d=btn.dataset;
   if(ADMIN&&adminClick(d))return;
   if(d.start)return startWorkout(d.start);
   if('resume' in d){view='workout';render();scrollTo(0,0);return}
